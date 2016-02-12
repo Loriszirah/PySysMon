@@ -128,6 +128,13 @@ class InfosClient(Thread):
 
         Client["Uptime"] = uptime[0]
 
+        # Charge systeme #
+        loadavg = os.popen("cat /proc/loadavg", "r").read()
+        loadavg = loadavg.split(" ")
+        loadavg = loadavg[0]
+
+        Client["Load Average"] = loadavg
+
         # Stockage des infos sur la RAM dans la variable globale
         Infos["Client"] = Client
 
