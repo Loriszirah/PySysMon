@@ -37,6 +37,7 @@ class ConnexionClient(Thread):
         """ Tâches à effectuer pour chaque client"""
 
         response = self.socket.recv(512)
+        
         if response != "":
             data = pickle.loads(response)
             data["Client"]["IP"] = self.address
