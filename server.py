@@ -10,9 +10,8 @@ from threading import Thread
                                 ###                ###
 
 # Information du serveur #
-port = 50000
 s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-s.bind(('localhost', 50000))
+s.bind(('', 50000))
 # Chemin vers la base de données #
 db = 'server.db'
 
@@ -173,7 +172,6 @@ def SqlMachineExist(database, IP):
 ###
 # Connexion Client
 ###
-
 
 class ConnexionClient(Thread):
     """ Thread de récupération des informations sur le CPU """
