@@ -123,13 +123,13 @@ class InfosClient(Thread):
 
         # Uptime #
         uptime = os.popen("uptime", "r").read()
-        uptime = uptime.split(" ")
-        uptime = uptime[3].split(",")
+        uptime = uptime.split()
+        uptime = uptime[2].split(",")
         Client["Uptime"] = uptime[0]
 
         # Charge systeme #
         loadavg = os.popen("cat /proc/loadavg", "r").read()
-        loadavg = loadavg.split(" ")
+        loadavg = loadavg.split()
         loadavg = loadavg[0]
 
         Client["Load"] = loadavg
