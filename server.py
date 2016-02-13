@@ -25,38 +25,6 @@ db = 'server.db'
                 ###                                                                   ###
 
 
-###
-# Connexion Client
-###
-
-
-class ConnexionClient(Thread):
-    """ Thread de récupération des informations sur le CPU """
-
-    def __init__(self, socket, address):
-        Thread.__init__(self)
-        self.address = address
-        self.socket = socket
-
-    def run(self):
-        """ Tâches à effectuer pour chaque client"""
-
-        response = self.socket.recv(512)
-        data = pickle.loads(response)
-
-        if isinstance(data, dict):
-            data["Client"]["IP"] = self.address
-
-            res = SqlMachineExist(db, self.address)
-            print(res)
-            # Ecriture des données dans la base de données #
-                #SqlAddMachine(data, db)
-            #else:
-                #print("Machine déjà sauvegardé")
-
-        else:
-            return
-
 
 
 
@@ -130,6 +98,8 @@ def SqlTables(database):
 
     sql.close()
 
+    return
+
 
 ###
 # Ecriture dans la base de données
@@ -156,6 +126,32 @@ def SqlAddMachine(data, database):
     return
 
 ###
+# Mise à jour des informations d'une machine existante
+###
+
+def SqlUpdateMachine(data, database):
+    """ Ecriture des informations dans la base de données """
+
+    sql = SqlAccess(database)
+
+
+    client = data.get("Client")
+    nom = client.get("Hostname")
+    IP = client.get("IP")
+    L = client.get("Load")
+    U = client.get("Uptime")
+
+    sql.execute("UPDATE Machines SET NomMachine = ?, IPMachine =?, Load =?, Uptime =? WHERE IPMachine =?", (nom,IP,L,U,IP,))
+
+    machine = sql.select("""SELECT * FROM Machines""")
+    print(list(machine))
+
+    sql.close()
+
+    return
+
+
+###
 # Test l'existance d'une machine dans la table Machines
 ###
 
@@ -164,15 +160,50 @@ def SqlMachineExist(database, IP):
 
     sql = SqlAccess(database)
 
-    res = sql.select("SELECT * FROM Machines WHERE IPMachine = ?", (IP,))
+    res = list(sql.select("SELECT * FROM Machines WHERE IPMachine = ?", (IP,)))
 
     sql.close()
 
-    print(str(list(res)))
-    if list(res) != None:
+    if bool(res) != False:
         return 0
     else:
         return 1
+
+
+###
+# Connexion Client
+###
+
+
+class ConnexionClient(Thread):
+    """ Thread de récupération des informations sur le CPU """
+
+    def __init__(self, socket, address):
+        Thread.__init__(self)
+        self.address = address
+        self.socket = socket
+
+    def run(self):
+        """ Tâches à effectuer pour chaque client"""
+
+        response = self.socket.recv(512)
+        data = pickle.loads(response)
+        if isinstance(data, dict):
+            data["Client"]["IP"] = self.address
+
+            if SqlMachineExist(db, self.address) == 1:
+
+                # Ecriture des données dans la base de données #
+                SqlAddMachine(data, db)
+
+            else:
+                print("Machine déjà sauvegardé")
+                SqlUpdateMachine(data,db)
+
+        else:
+            self.socket.close()
+
+
 
 
 def main():
