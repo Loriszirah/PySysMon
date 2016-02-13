@@ -133,7 +133,7 @@ class InfosClient(Thread):
         loadavg = loadavg.split(" ")
         loadavg = loadavg[0]
 
-        Client["Load Average"] = loadavg
+        Client["Load"] = loadavg
 
         # Stockage des infos sur la RAM dans la variable globale
         Infos["Client"] = Client
