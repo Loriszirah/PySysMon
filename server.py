@@ -13,6 +13,10 @@ from threading import Thread
 port = 50000
 s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 s.bind(('localhost', 50000))
+# Chemin vers la base de données #
+db = 'server.db'
+
+
 
 
 
@@ -40,45 +44,19 @@ class ConnexionClient(Thread):
         response = self.socket.recv(512)
         data = pickle.loads(response)
 
-        if isinstance(data, dict) and data != "":
+        if isinstance(data, dict):
             data["Client"]["IP"] = self.address
 
-            # Connection à la base de données #
-            db = 'server.db'
-
+            res = SqlMachineExist(db, self.address)
+            print(res)
             # Ecriture des données dans la base de données #
-            SqlSave(data, db)
+                #SqlAddMachine(data, db)
+            #else:
+                #print("Machine déjà sauvegardé")
 
         else:
             return
 
-###
-# Ecriture dans la base de données
-###
-
-def SqlSave(data, db):
-    """ Ecriture des informations dans la base de données """
-
-    sql = SqlAccess(db)
-    sql.execute("""CREATE TABLE IF NOT EXISTS Machines(
-                    IDMachine INTEGER PRIMARY KEY AUTOINCREMENT UNIQUE,
-                    NomMachine TEXT,
-                    IPMachine TEXT,
-                    Load TEXT,
-                    Uptime TEXT)""", ())
-    client = data.get("Client")
-    nom = client.get("Hostname")
-    IP = client.get("IP")
-    Load = client.get("Load")
-    Uptime = client.get("Uptime")
-    sql.execute("INSERT INTO Machines(NomMachine, IPMachine, Load, Uptime) VALUES(?,?,?,?)", (nom,IP,Load,Uptime))
-
-    for v, w, x, y, z in sql.select("""SELECT * FROM Machines ORDER BY IDMachine DESC LIMIT 1 """):
-        print(v, w, x, y, z)
-
-    sql.close()
-
-    return
 
 
 
@@ -87,13 +65,13 @@ def SqlSave(data, db):
 ###
 
 class SqlAccess(Thread):
-    def __init__(self, db):
+    def __init__(self, database):
         Thread.__init__(self)
-        self.db=db
+        self.database=database
         self.reqs=Queue()
         self.start()
     def run(self):
-        conn = apsw.Connection(self.db)
+        conn = apsw.Connection(self.database)
         cursor = conn.cursor()
         while True:
             req, arg, res = self.reqs.get()
@@ -117,9 +95,90 @@ class SqlAccess(Thread):
         self.execute('--close--')
 
 
+###
+# Création des tables
+###
+
+def SqlTables(database):
+    """ Création des tables au lancement du programme """
+
+    sql = SqlAccess(database)
+
+    # Table des Machines #
+    sql.execute("""CREATE TABLE IF NOT EXISTS Machines(
+                    IDMachine INTEGER PRIMARY KEY AUTOINCREMENT UNIQUE,
+                    NomMachine TEXT,
+                    IPMachine TEXT,
+                    Load TEXT,
+                    Uptime TEXT)""", ())
+
+    # Table des informations CPU #
+    sql.execute("""CREATE TABLE IF NOT EXISTS Cpu(
+                    IDCpuInfo INTEGER PRIMARY KEY AUTOINCREMENT UNIQUE,
+                    ModelCpu TEXT,
+                    FrequencyCpu TEXT,
+                    NbCore TEXT,
+                    NbThread TEXT,
+                    PercentCpu TEXT)""", ())
+
+    # Table des informations RAM #
+    sql.execute("""CREATE TABLE IF NOT EXISTS Ram(
+                    IDRam INTEGER PRIMARY KEY AUTOINCREMENT UNIQUE,
+                    TotalRam TEXT,
+                    UseRam TEXT,
+                    PercentRam TEXT)""", ())
+
+    sql.close()
+
+
+###
+# Ecriture dans la base de données
+###
+
+def SqlAddMachine(data, database):
+    """ Ecriture des informations dans la base de données """
+
+    sql = SqlAccess(database)
+
+
+    client = data.get("Client")
+    nom = client.get("Hostname")
+    IP = client.get("IP")
+    Load = client.get("Load")
+    Uptime = client.get("Uptime")
+    sql.execute("INSERT INTO Machines(NomMachine, IPMachine, Load, Uptime) VALUES(?,?,?,?)", (nom,IP,Load,Uptime))
+
+    machine = sql.select("""SELECT * FROM Machines ORDER BY IDMachine DESC LIMIT 1 """)
+    print(list(machine))
+
+    sql.close()
+
+    return
+
+###
+# Test l'existance d'une machine dans la table Machines
+###
+
+def SqlMachineExist(database, IP):
+    """ Test de présence d'une machine dans la table grâce à son IP """
+
+    sql = SqlAccess(database)
+
+    res = sql.select("SELECT * FROM Machines WHERE IPMachine = ?", (IP,))
+
+    sql.close()
+
+    print(str(list(res)))
+    if list(res) != None:
+        return 0
+    else:
+        return 1
+
+
 def main():
     """ Programme principal """
 
+    SqlTables(db)
 
     while (1):
         s.listen(10)

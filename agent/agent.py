@@ -124,8 +124,7 @@ class InfosClient(Thread):
         # Uptime #
         uptime = os.popen("uptime", "r").read()
         uptime = uptime.split(" ")
-        uptime = uptime[4].split(",")
-
+        uptime = uptime[3].split(",")
         Client["Uptime"] = uptime[0]
 
         # Charge systeme #
@@ -176,7 +175,7 @@ def main():
         threadRam.join()
         threadClient.join()
 
-        print(Infos)
+        #print(Infos)
 
         # Envoi des informations
         SendInfos()
