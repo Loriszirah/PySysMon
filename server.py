@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-import socket, pickle, sqlite3, apsw
+import socket, pickle, sqlite3, apsw, time
 from queue import Queue
 from threading import Thread
 
@@ -15,6 +15,11 @@ s.bind(('', 50000))
 # Chemin vers la base de données #
 db = 'server.db'
 
+# Connexion à la base de données #
+conn = sqlite3.connect(db , check_same_thread = False )
+conn.execute('pragma foreign_keys = on')
+conn.commit()
+cur = conn.cursor()
 
 
 
@@ -25,143 +30,91 @@ db = 'server.db'
 
 
 
+                                ###                            ###
+                                # Actions sur la base de données #
+                                ###                            ###
 
 
-###
-# Thread d'accés à la base de données
-###
 
-class SqlAccess(Thread):
-    def __init__(self, database):
-        Thread.__init__(self)
-        self.database=database
-        self.reqs=Queue()
-        self.start()
-    def run(self):
-        conn = apsw.Connection(self.database)
-        cursor = conn.cursor()
-        while True:
-            req, arg, res = self.reqs.get()
-            if req=='--close--': break
-            cursor.execute(req, arg)
-            if res:
-                for rec in cursor:
-                    res.put(rec)
-                res.put('--no more--')
-        conn.close()
-    def execute(self, req, arg=None, res=None):
-        self.reqs.put((req, arg or tuple(), res))
-    def select(self, req, arg=None):
-        res=Queue()
-        self.execute(req, arg, res)
-        while True:
-            rec=res.get()
-            if rec=='--no more--': break
-            yield rec
-    def close(self):
-        self.execute('--close--')
 
 
 ###
 # Création des tables
 ###
 
-def SqlTables(database):
+def SqlTables():
     """ Création des tables au lancement du programme """
 
-    sql = SqlAccess(database)
 
-    # Table des Machines #
-    sql.execute("""CREATE TABLE IF NOT EXISTS Machines(
+
+    # Table de Stagging #
+    cur.execute("""CREATE TABLE IF NOT EXISTS Stage(
                     IDMachine INTEGER PRIMARY KEY AUTOINCREMENT UNIQUE,
                     NomMachine TEXT,
-                    IPMachine TEXT,
-                    Load TEXT,
-                    Uptime TEXT)""", ())
+                    IPMachine TEXT)""", ())
+
+    # Table des Machines #
+    cur.execute("""CREATE TABLE IF NOT EXISTS Machines(
+                    IDMachine INTEGER PRIMARY KEY AUTOINCREMENT UNIQUE,
+                    NomMachine TEXT,
+                    IPMachine TEXT)""", ())
 
     # Table des informations CPU #
-    sql.execute("""CREATE TABLE IF NOT EXISTS Cpu(
+    cur.execute("""CREATE TABLE IF NOT EXISTS Cpu(
                     IDCpuInfo INTEGER PRIMARY KEY AUTOINCREMENT UNIQUE,
                     ModelCpu TEXT,
                     FrequencyCpu TEXT,
                     NbCore TEXT,
                     NbThread TEXT,
-                    PercentCpu TEXT)""", ())
+                    PercentCpu TEXT,
+                    Machine TEXT)""", ())
 
     # Table des informations RAM #
-    sql.execute("""CREATE TABLE IF NOT EXISTS Ram(
+    cur.execute("""CREATE TABLE IF NOT EXISTS Ram(
                     IDRam INTEGER PRIMARY KEY AUTOINCREMENT UNIQUE,
                     TotalRam TEXT,
                     UseRam TEXT,
-                    PercentRam TEXT)""", ())
+                    PercentRam TEXT,
+                    Machine TEXT)""", ())
 
-    sql.close()
+    # Table des informations Systeme #
+    cur.execute("""CREATE TABLE IF NOT EXISTS Systeme(
+                    IDSysteme INTEGER PRIMARY KEY AUTOINCREMENT UNIQUE,
+                    Load TEXT,
+                    Uptime TEXT,
+                    Machine TEXT)""", ())
+
+
+    conn.commit()
 
     return
 
-
 ###
-# Ecriture dans la base de données
+# Enregistrement du client dans la zone de stagging
 ###
 
-def SqlAddMachine(data, database):
+def SqlAddToStage(data):
     """ Ecriture des informations dans la base de données """
-
-    sql = SqlAccess(database)
-
 
     client = data.get("Client")
     nom = client.get("Hostname")
     IP = client.get("IP")
-    Load = client.get("Load")
-    Uptime = client.get("Uptime")
-    sql.execute("INSERT INTO Machines(NomMachine, IPMachine, Load, Uptime) VALUES(?,?,?,?)", (nom,IP,Load,Uptime))
 
-    machine = sql.select("""SELECT * FROM Machines ORDER BY IDMachine DESC LIMIT 1 """)
-    print(list(machine))
+    cur.execute("INSERT INTO Stage(NomMachine, IPMachine) VALUES(?,?)", (nom,IP,))
 
-    sql.close()
+    conn.commit()
 
     return
-
-###
-# Mise à jour des informations d'une machine existante
-###
-
-def SqlUpdateMachine(data, database):
-    """ Ecriture des informations dans la base de données """
-
-    sql = SqlAccess(database)
-
-
-    client = data.get("Client")
-    nom = client.get("Hostname")
-    IP = client.get("IP")
-    L = client.get("Load")
-    U = client.get("Uptime")
-
-    sql.execute("UPDATE Machines SET NomMachine = ?, IPMachine =?, Load =?, Uptime =? WHERE IPMachine =?", (nom,IP,L,U,IP,))
-
-    machine = sql.select("""SELECT * FROM Machines WHERE IPMachine =?""", (IP,))
-    print(list(machine))
-
-    sql.close()
-
-    return
-
 
 ###
 # Test l'existance d'une machine dans la table Machines
 ###
 
-def SqlMachineExist(database, IP):
+def SqlIsInStage(IP):
     """ Test de présence d'une machine dans la table grâce à son IP """
 
-    sql = SqlAccess(database)
+    res = list(cur.execute("SELECT * FROM Stage WHERE IPMachine = ?", (IP,)))
 
-    res = list(sql.select("SELECT * FROM Machines WHERE IPMachine = ?", (IP,)))
-
-    sql.close()
 
     if bool(res) != False:
         return 0
@@ -170,36 +123,159 @@ def SqlMachineExist(database, IP):
 
 
 ###
-# Connexion Client
+# Test l'existance d'une machine dans la table Machines
 ###
 
-class ConnexionClient(Thread):
+def SqlMachineExist(IP):
+    """ Test de présence d'une machine dans la table grâce à son IP """
+
+    res = list(cur.execute("SELECT * FROM Machines WHERE IPMachine = ?", (IP,)))
+
+
+    if bool(res) != False:
+        return 0
+    else:
+        return 1
+
+
+###
+# Ecriture dans la base de données
+###
+
+def SqlAddMachine(data):
+    """ Ecriture des informations dans la base de données """
+
+
+
+    client = data.get("Client")
+    nom = client.get("Hostname")
+    IP = client.get("IP")
+
+    # On supprime le client de la stagging area #
+    cur.execute("""DELETE FROM Stage WHERE IPMachine = ?""",(IP,))
+
+    cur.execute("INSERT INTO Machines(NomMachine, IPMachine) VALUES(?,?)", (nom,IP,))
+
+    conn.commit()
+
+    return
+
+###
+# Mise à jour des informations d'une machine existante
+###
+
+def SqlSaveInfos(data):
+    """ Ecriture des informations dans la base de données """
+
+    # Récupération de l'IP du clinet pour lier les informations stockées à sa machine #
+    IP = data.get("IP")
+
+    nomMachine = cur.execute("""SELECT NomMachine FROM Machines WHERE IPMachine =?""", (IP,))
+    nom = list(nomMachine)
+    nomMachine = nom[0][0]
+
+    # Ajout des informations Cpu #
+    Cpu = data.get("CPU")
+    model = Cpu.get("Model")
+    frequency = Cpu.get("Frequency")
+    core = Cpu.get("Core")
+    thread = Cpu.get("Thread")
+    percent = Cpu.get("Percent")
+    print(nomMachine)
+
+    cur.execute("INSERT INTO Cpu(ModelCpu, FrequencyCpu, NbCore, NbThread, PercentCpu, Machine) VALUES(?,?,?,?,?,?)", (model,frequency,core,thread,percent,str(nomMachine),))
+
+    conn.commit()
+
+    return
+
+
+
+                        ###                                           ###
+                        # Envois et réception de messages via le réseau #
+                        ###                                           ###
+
+
+###
+# Ajout du nouveau Client
+###
+
+class AddClient(Thread):
     """ Thread de récupération des informations sur le CPU """
 
     def __init__(self, socket, address):
         Thread.__init__(self)
         self.address = address
         self.socket = socket
+        self.stay = True
 
     def run(self):
         """ Tâches à effectuer pour chaque client"""
 
-        response = self.socket.recv(512)
+        response = self.socket.recv(255)
         data = pickle.loads(response)
-        if isinstance(data, dict):
-            data["Client"]["IP"] = self.address
 
-            if SqlMachineExist(db, self.address) == 1:
+        data["Client"]["IP"] = self.address
+        
+        # Enregistrement de la machine dans le Stage #
+        SqlAddToStage(data)
+        machine = cur.execute("""SELECT * FROM Stage ORDER BY IDMachine DESC LIMIT 1 """)
+        print(list(machine))
 
-                # Ecriture des données dans la base de données #
-                SqlAddMachine(data, db)
+        print("Test 1")
+        SendToken(self.socket)
+        print("Test 2")
+        SqlAddMachine(data)
+        print("Test 3")
 
+
+
+
+
+
+
+###
+# Réception des infortions depuis un client enregistré
+###
+
+class ReceptionClient(Thread):
+    """ Thread de récupération des informations sur le CPU """
+
+    def __init__(self, socket, address):
+        Thread.__init__(self)
+        self.address = address
+        self.socket = socket
+        self.stay = True
+
+    def run(self):
+        """ Tâches à effectuer pour chaque client"""
+
+
+        while self.stay == True:
+            response = self.socket.recv(512)
+            data = pickle.loads(response)
+            data["IP"] = self.address
+            if isinstance(data, dict):
+                SqlSaveInfos(data)
             else:
-                print("Machine déjà sauvegardé")
-                SqlUpdateMachine(data,db)
+                self.stay = False
 
-        else:
-            self.socket.close()
+
+###
+# Envoi du token au client
+###
+
+def SendToken(sock):
+    """ Envoi d'un token d'approbation au client """
+    sync = False
+    sock.send(pickle.dumps("OK"))
+
+    while sync == False:
+        response = sock.recv(64)
+        response = pickle.loads(response)
+        if response == "OK":
+            sync = True
+    return
 
 
 
@@ -207,14 +283,24 @@ class ConnexionClient(Thread):
 def main():
     """ Programme principal """
 
-    SqlTables(db)
+
+    SqlTables()
 
     while (1):
         s.listen(10)
 
-        client, (address, port) = s.accept()
-        threadClient = ConnexionClient(client, address)
-        threadClient.start()
+        client,(address, port) = s.accept()
+        print(address)
+        if SqlMachineExist(address) == 1 or SqlIsInStage(address) == 1:
+            threadAddClient = AddClient(client, address)
+            threadAddClient.start()
+            threadAddClient.join()
+        time.sleep(2)
+        if SqlMachineExist(address) == 0 and SqlIsInStage(address) == 1:
+            threadRecepClient = ReceptionClient(client, address)
+            threadRecepClient.start()
+
+
 
 if __name__ == '__main__':
     main()

@@ -101,6 +101,35 @@ class InfosRam(Thread):
         # Stockage des infos sur la RAM dans la variable globale
         Infos["RAM"] = Ram
 
+###
+# Informations sur le client
+###
+
+class InfosSystem(Thread):
+    """ Thread de récupération des informations sur le CPU """
+
+    def __init__(self):
+        Thread.__init__(self)
+
+    def run(self):
+        System = {}
+
+        # Uptime #
+        uptime = os.popen("uptime", "r").read()
+        uptime = uptime.split()
+        uptime = uptime[2].split(",")
+        System["Uptime"] = uptime[0]
+
+        # Charge systeme #
+        loadavg = os.popen("cat /proc/loadavg", "r").read()
+        loadavg = loadavg.split()
+        loadavg = loadavg[0]
+
+        System["Load"] = loadavg
+
+        # Stockage des infos systeme dans Infos
+        Infos["System"] = System
+
 
 ###
 # Informations sur le client
@@ -121,21 +150,36 @@ class InfosClient(Thread):
 
         Client["Hostname"] = hostname[0]
 
-        # Uptime #
-        uptime = os.popen("uptime", "r").read()
-        uptime = uptime.split()
-        uptime = uptime[2].split(",")
-        Client["Uptime"] = uptime[0]
-
-        # Charge systeme #
-        loadavg = os.popen("cat /proc/loadavg", "r").read()
-        loadavg = loadavg.split()
-        loadavg = loadavg[0]
-
-        Client["Load"] = loadavg
-
-        # Stockage des infos sur la RAM dans la variable globale
+        # Stockage des infos du client
         Infos["Client"] = Client
+
+
+
+###
+# Procédure d'appareillage
+###
+
+def SayHello(sync, sock):
+    """ Procédure d'appareillage avec le serveur """
+
+
+
+    # Encryption du paquet avec Pickle pour l'envoi du dictionnaire
+    sock.send(pickle.dumps(Infos))
+    print(sync)
+
+    while sync == False:
+        response = sock.recv(64)
+        print("Test")
+
+        data = pickle.loads(response)
+
+        if data == "OK":
+            sync = True
+            sock.send(pickle.dumps("OK"))
+            print("app OK")
+
+    return sync
 
 
 ###
@@ -143,42 +187,55 @@ class InfosClient(Thread):
 ###
 
 
-def SendInfos():
+def SendInfos(sock):
     """ Envoie des informations récoltées au serveur """
 
-    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    s.connect((server, portServer))
+
 
     # Encryption du paquet avec Pickle pour l'envoi du dictionnaire
-    s.send(pickle.dumps(Infos))
+    sock.send(pickle.dumps(Infos))
 
-    s.close()
 
     return 0
 
+
 def main():
     """ Programme principal """
+    sync = False
+    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    s.connect((server, portServer))
+
+    while sync == False:
+        # Appareillage avec le serveur #
+        threadClient = InfosClient()
+        threadClient.start()
+        threadClient.join()
+        sync = SayHello(sync, s)
+        print("Le serveur a accepté l'appareillage")
+
+
 
     while (1):
+        print("Envoi des infos")
         # Création des threads
         threadCpu = InfosCpu()
         threadRam = InfosRam()
-        threadClient = InfosClient()
+        threadSystem = InfosSystem()
 
         # Démarrage des threads
         threadCpu.start()
         threadRam.start()
-        threadClient.start()
+        threadSystem.start()
 
         # Attente de terminaison des threads
         threadCpu.join()
         threadRam.join()
-        threadClient.join()
+        threadSystem.join()
 
         #print(Infos)
 
         # Envoi des informations
-        SendInfos()
+        SendInfos(s)
 
         # Petite pause pour laisser le serveur recevoir le paquet
         time.sleep(2)
