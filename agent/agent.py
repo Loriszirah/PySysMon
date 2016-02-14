@@ -166,7 +166,6 @@ def SayHello(sync, sock):
 
     # Encryption du paquet avec Pickle pour l'envoi du dictionnaire
     sock.send(pickle.dumps(Infos))
-    print(sync)
 
     while sync == False:
         response = sock.recv(64)
