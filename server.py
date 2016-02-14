@@ -142,7 +142,7 @@ def SqlUpdateMachine(data, database):
 
     sql.execute("UPDATE Machines SET NomMachine = ?, IPMachine =?, Load =?, Uptime =? WHERE IPMachine =?", (nom,IP,L,U,IP,))
 
-    machine = sql.select("""SELECT * FROM Machines""")
+    machine = sql.select("""SELECT * FROM Machines WHERE IPMachine =?""", (IP,))
     print(list(machine))
 
     sql.close()
