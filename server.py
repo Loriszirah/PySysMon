@@ -154,7 +154,7 @@ def SqlAddMachine(data):
     # On supprime le client de la stagging area #
     cur.execute("""DELETE FROM Stage WHERE IPMachine = ?""",(IP,))
 
-    cur.execute("INSERT INTO Machines(NomMachine, IPMachine) VALUES(?,?)", (nom,IP,))
+    cur.execute("INSERT OR REPLACE INTO  Machines(NomMachine, IPMachine) VALUES(?,?)", (nom,IP,))
 
     conn.commit()
 
@@ -216,7 +216,7 @@ class AddClient(Thread):
         data = pickle.loads(response)
 
         data["Client"]["IP"] = self.address
-        
+
         # Enregistrement de la machine dans le Stage #
         SqlAddToStage(data)
         machine = cur.execute("""SELECT * FROM Stage ORDER BY IDMachine DESC LIMIT 1 """)
@@ -254,8 +254,8 @@ class ReceptionClient(Thread):
         while self.stay == True:
             response = self.socket.recv(512)
             data = pickle.loads(response)
-            data["IP"] = self.address
             if isinstance(data, dict):
+                data["IP"] = self.address
                 SqlSaveInfos(data)
             else:
                 self.stay = False
@@ -266,7 +266,7 @@ class ReceptionClient(Thread):
 ###
 
 def SendToken(sock):
-    """ Envoi d'un token d'approbation au client """
+    """ Envoi d'un token d'approbation au client pour initialiser l'échange de données """
     sync = False
     sock.send(pickle.dumps("OK"))
 
@@ -291,14 +291,16 @@ def main():
 
         client,(address, port) = s.accept()
         print(address)
-        if SqlMachineExist(address) == 1 or SqlIsInStage(address) == 1:
+        if SqlMachineExist(address) == 1:
             threadAddClient = AddClient(client, address)
             threadAddClient.start()
             threadAddClient.join()
+        else:
+            SendToken(client)
+
         time.sleep(2)
-        if SqlMachineExist(address) == 0 and SqlIsInStage(address) == 1:
-            threadRecepClient = ReceptionClient(client, address)
-            threadRecepClient.start()
+        threadRecepClient = ReceptionClient(client, address)
+        threadRecepClient.start()
 
 
 
