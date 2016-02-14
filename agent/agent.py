@@ -170,14 +170,12 @@ def SayHello(sync, sock):
 
     while sync == False:
         response = sock.recv(64)
-        print("Test")
 
         data = pickle.loads(response)
 
         if data == "OK":
             sync = True
             sock.send(pickle.dumps("OK"))
-            print("app OK")
 
     return sync
 

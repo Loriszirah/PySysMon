@@ -80,8 +80,8 @@ def SqlTables():
     # Table des informations Systeme #
     cur.execute("""CREATE TABLE IF NOT EXISTS Systeme(
                     IDSysteme INTEGER PRIMARY KEY AUTOINCREMENT UNIQUE,
-                    Load TEXT,
                     Uptime TEXT,
+                    Load TEXT,
                     Machine TEXT)""", ())
 
 
@@ -181,12 +181,33 @@ def SqlSaveInfos(data):
     core = Cpu.get("Core")
     thread = Cpu.get("Thread")
     percent = Cpu.get("Percent")
-    print(nomMachine)
 
     cur.execute("INSERT INTO Cpu(ModelCpu, FrequencyCpu, NbCore, NbThread, PercentCpu, Machine) VALUES(?,?,?,?,?,?)", (model,frequency,core,thread,percent,str(nomMachine),))
 
     conn.commit()
 
+    # Ajout des informations Ram #
+
+    Ram = data.get("RAM")
+    total = Ram.get("Total")
+    use = Ram.get("Use")
+    percent = Ram.get("Percent")
+
+    cur.execute("INSERT INTO Ram(TotalRam, UseRam, PercentRam, Machine) VALUES(?,?,?,?)", (total, use,percent,str(nomMachine),))
+
+    conn.commit()
+
+    # Ajout des informations Systeme #
+
+    System = data.get("System")
+    uptime = System.get("Uptime")
+    load = System.get("Load")
+
+    cur.execute("INSERT INTO Systeme(Uptime, Load, Machine) VALUES(?,?,?)", (uptime, load,str(nomMachine),))
+
+    conn.commit()
+
+    print("Les informations du client " + str(nomMachine) + " ont été reçues et enregistrées.")
     return
 
 
@@ -219,14 +240,9 @@ class AddClient(Thread):
 
         # Enregistrement de la machine dans le Stage #
         SqlAddToStage(data)
-        machine = cur.execute("""SELECT * FROM Stage ORDER BY IDMachine DESC LIMIT 1 """)
-        print(list(machine))
 
-        print("Test 1")
         SendToken(self.socket)
-        print("Test 2")
         SqlAddMachine(data)
-        print("Test 3")
 
 
 
@@ -290,7 +306,7 @@ def main():
         s.listen(10)
 
         client,(address, port) = s.accept()
-        print(address)
+        print("Connexion depuis " + address)
         if SqlMachineExist(address) == 1:
             threadAddClient = AddClient(client, address)
             threadAddClient.start()
