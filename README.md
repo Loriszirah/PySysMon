@@ -7,5 +7,5 @@ Application client/serveur de monitoring et d'agrégation de logs en Python
 
 ## TODO
 
-* Accés serveur sécurisé par mot de passe pour éviter le spoof.
+* Ajout de l'agrégation de logs aux features. 
 * Interface Web Django.
