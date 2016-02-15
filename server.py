@@ -2,7 +2,6 @@
 # -*- coding: utf-8 -*-
 
 import socket, pickle, sqlite3, time, hashlib, sys ,os
-from queue import Queue
 from threading import Thread
 
                                 ###                ###
@@ -249,6 +248,8 @@ class AddClient(Thread):
             self.res = 0
             self.result()
         elif token == 1:
+            cur.execute("""DELETE FROM Stage WHERE IPMachine = ?""",(self.address,))
+            conn.commit()
             self.res = 1
             self.result()
 

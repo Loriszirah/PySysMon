@@ -19,7 +19,7 @@ s.connect((server, portServer))
 Infos = {}
 
 # Mot de passe pour le serveur #
-passwd = "test"
+passwd = "tes"
 
 
 
