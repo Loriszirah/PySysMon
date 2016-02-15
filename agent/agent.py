@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 
-import psutil, bitmath, socket, pickle, time, os
+import psutil, bitmath, socket, pickle, time, os, hashlib, sys
 from threading import Thread
 
 
@@ -16,6 +16,9 @@ portServer = 50000
 
 # Informations de chaque Threads #
 Infos = {}
+
+# Mot de passe pour le serveur #
+passwd = "test"
 
 
 
@@ -159,13 +162,16 @@ class InfosClient(Thread):
 # Procédure d'appareillage
 ###
 
-def SayHello(sync, sock):
+def SayHello(sync, sock, password):
     """ Procédure d'appareillage avec le serveur """
 
-
+    hash_object = hashlib.sha512(password.encode('utf-8'))
+    password = hash_object.hexdigest()
 
     # Encryption du paquet avec Pickle pour l'envoi du dictionnaire
     sock.send(pickle.dumps(Infos))
+    time.sleep(2)
+    sock.send(pickle.dumps(password))
 
     while sync == False:
         response = sock.recv(64)
@@ -174,7 +180,10 @@ def SayHello(sync, sock):
 
         if data == "OK":
             sync = True
-            sock.send(pickle.dumps("OK"))
+        elif data == "Mauvais mot de passe":
+            print(data)
+            sock.close()
+            exit()
 
     return sync
 
@@ -198,16 +207,19 @@ def SendInfos(sock):
 
 def main():
     """ Programme principal """
+
+    password = passwd
     sync = False
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     s.connect((server, portServer))
-
     while sync == False:
+
         # Appareillage avec le serveur #
         threadClient = InfosClient()
         threadClient.start()
         threadClient.join()
-        sync = SayHello(sync, s)
+        time.sleep(1)
+        sync = SayHello(sync, s, passwd)
         print("Le serveur a accepté l'appareillage")
 
 
@@ -230,9 +242,14 @@ def main():
         threadSystem.join()
 
         #print(Infos)
-
-        # Envoi des informations
-        SendInfos(s)
+        try:
+            # Envoi des informations
+            SendInfos(s)
+        except BrokenPipeError:
+            print("[!] Le serveur est injoignable")
+            s.close()
+            print("[-] Arret du daemon Pysysmon")
+            exit()
 
         # Petite pause pour laisser le serveur recevoir le paquet
         time.sleep(2)
@@ -240,4 +257,12 @@ def main():
 
 
 if __name__ == '__main__':
-    main()
+
+    try:
+        main()
+    except KeyboardInterrupt:
+        print("\n[-] Arret du daemon Pysysmon")
+        try:
+            sys.exit(0)
+        except SystemExit:
+            os._exit(0)

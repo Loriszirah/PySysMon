@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-import socket, pickle, sqlite3, apsw, time
+import socket, pickle, sqlite3, apsw, time, hashlib, sys ,os
 from queue import Queue
 from threading import Thread
 
@@ -21,6 +21,8 @@ conn.execute('pragma foreign_keys = on')
 conn.commit()
 cur = conn.cursor()
 
+# Mot de passe de sécurité #
+passwd = "test"
 
 
 
@@ -207,7 +209,7 @@ def SqlSaveInfos(data):
 
     conn.commit()
 
-    print("Les informations du client " + str(nomMachine) + " ont été reçues et enregistrées.")
+    print("[+] Les informations du client " + str(nomMachine) + " ont été reçues et enregistrées.")
     return
 
 
@@ -224,10 +226,11 @@ def SqlSaveInfos(data):
 class AddClient(Thread):
     """ Thread de récupération des informations sur le CPU """
 
-    def __init__(self, socket, address):
+    def __init__(self, socket, address, password):
         Thread.__init__(self)
         self.address = address
         self.socket = socket
+        self.password = password
         self.stay = True
 
     def run(self):
@@ -241,10 +244,16 @@ class AddClient(Thread):
         # Enregistrement de la machine dans le Stage #
         SqlAddToStage(data)
 
-        SendToken(self.socket)
-        SqlAddMachine(data)
+        if SendToken(self.socket, self.password) != 1:
+            SqlAddMachine(data)
+            self.GoodResult()
+        else:
+            self.Badresult()
 
-
+    def BadResult(self):
+        return 1
+    def GoodResult(self):
+        return 0
 
 
 
@@ -269,7 +278,10 @@ class ReceptionClient(Thread):
 
         while self.stay == True:
             response = self.socket.recv(512)
-            data = pickle.loads(response)
+            try:
+                data = pickle.loads(response)
+            except (socket.error , EOFError):
+                break
             if isinstance(data, dict):
                 data["IP"] = self.address
                 SqlSaveInfos(data)
@@ -281,17 +293,29 @@ class ReceptionClient(Thread):
 # Envoi du token au client
 ###
 
-def SendToken(sock):
+def SendToken(sock, password):
     """ Envoi d'un token d'approbation au client pour initialiser l'échange de données """
-    sync = False
-    sock.send(pickle.dumps("OK"))
 
-    while sync == False:
-        response = sock.recv(64)
-        response = pickle.loads(response)
-        if response == "OK":
-            sync = True
-    return
+    hash_object = hashlib.sha512(password.encode('utf-8'))
+    passhash = hash_object.hexdigest()
+
+
+
+    response = sock.recv(512)
+    response = pickle.loads(response)
+    if isinstance(response, dict):
+        SendToken(sock,password)
+    elif response == passhash:
+        sock.send(pickle.dumps("OK"))
+        return 0
+
+    elif response != passhash:
+        sock.send(pickle.dumps("Mauvais mot de passe"))
+        return 1
+    else:
+        return 1
+
+
 
 
 
@@ -299,26 +323,69 @@ def SendToken(sock):
 def main():
     """ Programme principal """
 
-
+    password = passwd
     SqlTables()
+    token = None
 
     while (1):
         s.listen(10)
 
         client,(address, port) = s.accept()
-        print("Connexion depuis " + address)
-        if SqlMachineExist(address) == 1:
-            threadAddClient = AddClient(client, address)
+        print("[+] Connexion depuis " + address)
+        exist =SqlMachineExist(address)
+        if exist == 1:
+            threadAddClient = AddClient(client, address, password)
             threadAddClient.start()
             threadAddClient.join()
-        else:
-            SendToken(client)
 
-        time.sleep(2)
-        threadRecepClient = ReceptionClient(client, address)
-        threadRecepClient.start()
+            if threadAddClient.GoodResult() == 0:
+                print("[?] Succes de l'authentification de " + address)
+                time.sleep(2)
+                threadRecepClient = ReceptionClient(client, address)
+                threadRecepClient.start()
+                threadRecepClient.join()
+                client.close()
+                print("[!] Déconnexion du client: " + address)
+
+
+            elif threadAddClient.BadResult() == 1:
+                print("[!] Echec de l'authentification de " + address)
+                client.close()
+                time.sleep(2)
+
+
+        elif exist == 0:
+
+            token = SendToken(client, password)
+
+            if  token == 0:
+
+                client.close()
+                time.sleep(2)
+
+            else:
+
+                print("[?] Succes de l'authentification de " + address)
+                time.sleep(2)
+                threadRecepClient = ReceptionClient(client, address)
+                threadRecepClient.start()
+                threadRecepClient.join()
+                client.close()
+                print("[!] Déconnexion du client: " + address)
+
+
+
 
 
 
 if __name__ == '__main__':
-    main()
+
+    try:
+        main()
+    except KeyboardInterrupt:
+        print("\n[-] Fermeture du serveur")
+        try:
+            s.close()
+            sys.exit(0)
+        except SystemExit:
+            os._exit(0)
