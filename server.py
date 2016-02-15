@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-import socket, pickle, sqlite3, apsw, time, hashlib, sys ,os
+import socket, pickle, sqlite3, time, hashlib, sys ,os
 from queue import Queue
 from threading import Thread
 
