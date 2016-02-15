@@ -231,7 +231,7 @@ class AddClient(Thread):
         self.address = address
         self.socket = socket
         self.password = password
-        self.stay = True
+        self.res = 2
 
     def run(self):
         """ Tâches à effectuer pour chaque client"""
@@ -243,17 +243,25 @@ class AddClient(Thread):
 
         # Enregistrement de la machine dans le Stage #
         SqlAddToStage(data)
-
-        if SendToken(self.socket, self.password) != 1:
+        token = SendToken(self.socket, self.password, 1)
+        if token == 0:
             SqlAddMachine(data)
-            self.GoodResult()
-        else:
-            self.Badresult()
+            self.res = 0
+            self.result()
+        elif token == 1:
+            self.res = 1
+            self.result()
 
-    def BadResult(self):
-        return 1
-    def GoodResult(self):
-        return 0
+
+    def result(self):
+
+        if self.res == 0:
+            return 0
+        elif self.res == 1:
+            return 1
+
+
+
 
 
 
@@ -285,15 +293,20 @@ class ReceptionClient(Thread):
             if isinstance(data, dict):
                 data["IP"] = self.address
                 SqlSaveInfos(data)
-            else:
+            elif data == "exit":
                 self.stay = False
+                break
+        print("[!] Déconnexion du client: " + self.address)
+        self.socket.close()
+
+
 
 
 ###
 # Envoi du token au client
 ###
 
-def SendToken(sock, password):
+def SendToken(sock, password, step):
     """ Envoi d'un token d'approbation au client pour initialiser l'échange de données """
 
     hash_object = hashlib.sha512(password.encode('utf-8'))
@@ -302,6 +315,8 @@ def SendToken(sock, password):
 
 
     response = sock.recv(512)
+    if step == 2:
+        response = sock.recv(512)
     response = pickle.loads(response)
     if isinstance(response, dict):
         SendToken(sock,password)
@@ -338,43 +353,30 @@ def main():
             threadAddClient.start()
             threadAddClient.join()
 
-            if threadAddClient.GoodResult() == 0:
+            if threadAddClient.result() == 0:
                 print("[?] Succes de l'authentification de " + address)
-                time.sleep(2)
                 threadRecepClient = ReceptionClient(client, address)
                 threadRecepClient.start()
-                threadRecepClient.join()
-                client.close()
-                print("[!] Déconnexion du client: " + address)
 
 
-            elif threadAddClient.BadResult() == 1:
+            elif threadAddClient.result() == 1:
                 print("[!] Echec de l'authentification de " + address)
                 client.close()
-                time.sleep(2)
 
 
         elif exist == 0:
 
-            token = SendToken(client, password)
+            token = SendToken(client, password, 2)
+            if token == 1:
 
-            if  token == 0:
-
+                print("[!] Echec de l'authentification de " + address)
                 client.close()
-                time.sleep(2)
 
-            else:
+            elif token == 0:
 
                 print("[?] Succes de l'authentification de " + address)
-                time.sleep(2)
                 threadRecepClient = ReceptionClient(client, address)
                 threadRecepClient.start()
-                threadRecepClient.join()
-                client.close()
-                print("[!] Déconnexion du client: " + address)
-
-
-
 
 
 

@@ -13,7 +13,8 @@ from threading import Thread
 # Information du serveur #
 server = "localhost"
 portServer = 50000
-
+s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+s.connect((server, portServer))
 # Informations de chaque Threads #
 Infos = {}
 
@@ -182,7 +183,6 @@ def SayHello(sync, sock, password):
             sync = True
         elif data == "Mauvais mot de passe":
             print(data)
-            sock.close()
             exit()
 
     return sync
@@ -210,8 +210,7 @@ def main():
 
     password = passwd
     sync = False
-    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    s.connect((server, portServer))
+
     while sync == False:
 
         # Appareillage avec le serveur #
@@ -220,12 +219,12 @@ def main():
         threadClient.join()
         time.sleep(1)
         sync = SayHello(sync, s, passwd)
-        print("Le serveur a accepté l'appareillage")
+        print("[+] Le serveur a accepté l'appareillage")
 
 
 
     while (1):
-        print("Envoi des infos")
+        print("[+] Envoi des infos")
         # Création des threads
         threadCpu = InfosCpu()
         threadRam = InfosRam()
@@ -252,7 +251,6 @@ def main():
             exit()
 
         # Petite pause pour laisser le serveur recevoir le paquet
-        time.sleep(2)
 
 
 
@@ -263,6 +261,9 @@ if __name__ == '__main__':
     except KeyboardInterrupt:
         print("\n[-] Arret du daemon Pysysmon")
         try:
+            s.send(pickle.dumps("exit"))
+            s.close()
             sys.exit(0)
         except SystemExit:
+            s.close()
             os._exit(0)
