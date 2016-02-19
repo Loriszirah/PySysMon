@@ -1,0 +1,15 @@
+{
+  "name": "pysysmon-ui",
+  "version": "0.0.1",
+  "description": "Interface Web pour l'outil Pysysmon",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "dependencies": {
+    "ejs": "^1.0.0",
+    "express": "^4.6.1",
+   },
+  "author": "Alexandre Bouthinon",
+  "license": "MIT"
+}

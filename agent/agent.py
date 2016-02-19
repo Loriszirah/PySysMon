@@ -19,7 +19,7 @@ s.connect((server, portServer))
 Infos = {}
 
 # Mot de passe pour le serveur #
-passwd = "tes"
+passwd = "test"
 
 
 
@@ -229,16 +229,20 @@ def main():
         threadCpu = InfosCpu()
         threadRam = InfosRam()
         threadSystem = InfosSystem()
+        threadClient = InfosClient()
 
         # Démarrage des threads
         threadCpu.start()
         threadRam.start()
         threadSystem.start()
+        threadClient.start()
 
         # Attente de terminaison des threads
         threadCpu.join()
         threadRam.join()
         threadSystem.join()
+        threadClient.join()
+
 
         #print(Infos)
         try:

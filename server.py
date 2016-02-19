@@ -12,7 +12,7 @@ from threading import Thread
 s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 s.bind(('', 50000))
 # Chemin vers la base de données #
-db = 'server.db'
+db = 'WebUI/server.sqlite3'
 
 # Connexion à la base de données #
 conn = sqlite3.connect(db , check_same_thread = False )
@@ -48,17 +48,11 @@ def SqlTables():
 
 
 
-    # Table de Stagging #
-    cur.execute("""CREATE TABLE IF NOT EXISTS Stage(
-                    IDMachine INTEGER PRIMARY KEY AUTOINCREMENT UNIQUE,
-                    NomMachine TEXT,
-                    IPMachine TEXT)""", ())
-
     # Table des Machines #
     cur.execute("""CREATE TABLE IF NOT EXISTS Machines(
                     IDMachine INTEGER PRIMARY KEY AUTOINCREMENT UNIQUE,
                     NomMachine TEXT,
-                    IPMachine TEXT)""", ())
+                    IPMachine VARCHAR(15))""", ())
 
     # Table des informations CPU #
     cur.execute("""CREATE TABLE IF NOT EXISTS Cpu(
@@ -68,7 +62,8 @@ def SqlTables():
                     NbCore TEXT,
                     NbThread TEXT,
                     PercentCpu TEXT,
-                    Machine TEXT)""", ())
+                    IDMachine INTEGER,
+                    FOREIGN KEY(IDMachine) REFERENCES Machines(IDMachine))""", ())
 
     # Table des informations RAM #
     cur.execute("""CREATE TABLE IF NOT EXISTS Ram(
@@ -76,51 +71,22 @@ def SqlTables():
                     TotalRam TEXT,
                     UseRam TEXT,
                     PercentRam TEXT,
-                    Machine TEXT)""", ())
+                    IDMachine INTEGER,
+                    FOREIGN KEY(IDMachine) REFERENCES Machines(IDMachine))""", ())
 
     # Table des informations Systeme #
     cur.execute("""CREATE TABLE IF NOT EXISTS Systeme(
                     IDSysteme INTEGER PRIMARY KEY AUTOINCREMENT UNIQUE,
                     Uptime TEXT,
                     Load TEXT,
-                    Machine TEXT)""", ())
+                    IDMachine INTEGER,
+                    FOREIGN KEY(IDMachine) REFERENCES Machines(IDMachine))""", ())
 
 
     conn.commit()
 
     return
 
-###
-# Enregistrement du client dans la zone de stagging
-###
-
-def SqlAddToStage(data):
-    """ Ecriture des informations dans la base de données """
-
-    client = data.get("Client")
-    nom = client.get("Hostname")
-    IP = client.get("IP")
-
-    cur.execute("INSERT INTO Stage(NomMachine, IPMachine) VALUES(?,?)", (nom,IP,))
-
-    conn.commit()
-
-    return
-
-###
-# Test l'existance d'une machine dans la table Machines
-###
-
-def SqlIsInStage(IP):
-    """ Test de présence d'une machine dans la table grâce à son IP """
-
-    res = list(cur.execute("SELECT * FROM Stage WHERE IPMachine = ?", (IP,)))
-
-
-    if bool(res) != False:
-        return 0
-    else:
-        return 1
 
 
 ###
@@ -131,7 +97,6 @@ def SqlMachineExist(IP):
     """ Test de présence d'une machine dans la table grâce à son IP """
 
     res = list(cur.execute("SELECT * FROM Machines WHERE IPMachine = ?", (IP,)))
-
 
     if bool(res) != False:
         return 0
@@ -146,17 +111,11 @@ def SqlMachineExist(IP):
 def SqlAddMachine(data):
     """ Ecriture des informations dans la base de données """
 
-
-
     client = data.get("Client")
     nom = client.get("Hostname")
     IP = client.get("IP")
 
-    # On supprime le client de la stagging area #
-    cur.execute("""DELETE FROM Stage WHERE IPMachine = ?""",(IP,))
-
-    cur.execute("INSERT OR REPLACE INTO  Machines(NomMachine, IPMachine) VALUES(?,?)", (nom,IP,))
-
+    cur.execute("INSERT INTO  Machines(NomMachine, IPMachine) VALUES(?,?)", (nom,IP,))
     conn.commit()
 
     return
@@ -168,12 +127,15 @@ def SqlAddMachine(data):
 def SqlSaveInfos(data):
     """ Ecriture des informations dans la base de données """
 
-    # Récupération de l'IP du clinet pour lier les informations stockées à sa machine #
-    IP = data.get("IP")
+    # Récupération de l'IP du client pour lier les informations stockées à sa machine #
+    client = data.get("Client")
+    nom = client.get("Hostname")
+    IP = client.get("IP")
 
-    nomMachine = cur.execute("""SELECT NomMachine FROM Machines WHERE IPMachine =?""", (IP,))
-    nom = list(nomMachine)
-    nomMachine = nom[0][0]
+
+    idmachine = cur.execute("""SELECT IDMachine FROM Machines WHERE IPMachine =? AND NomMachine=?""", (IP,nom,))
+    idmachine = list(idmachine)
+    idmachine = idmachine[0][0]
 
     # Ajout des informations Cpu #
     Cpu = data.get("CPU")
@@ -183,7 +145,7 @@ def SqlSaveInfos(data):
     thread = Cpu.get("Thread")
     percent = Cpu.get("Percent")
 
-    cur.execute("INSERT INTO Cpu(ModelCpu, FrequencyCpu, NbCore, NbThread, PercentCpu, Machine) VALUES(?,?,?,?,?,?)", (model,frequency,core,thread,percent,str(nomMachine),))
+    cur.execute("INSERT INTO Cpu(ModelCpu, FrequencyCpu, NbCore, NbThread, PercentCpu, IDMachine) VALUES(?,?,?,?,?,?)", (model,frequency,core,thread,percent, str(idmachine),))
 
     conn.commit()
 
@@ -194,7 +156,7 @@ def SqlSaveInfos(data):
     use = Ram.get("Use")
     percent = Ram.get("Percent")
 
-    cur.execute("INSERT INTO Ram(TotalRam, UseRam, PercentRam, Machine) VALUES(?,?,?,?)", (total, use,percent,str(nomMachine),))
+    cur.execute("INSERT INTO Ram(TotalRam, UseRam, PercentRam, IDMachine) VALUES(?,?,?,?)", (total, use,percent,str(idmachine),))
 
     conn.commit()
 
@@ -204,11 +166,11 @@ def SqlSaveInfos(data):
     uptime = System.get("Uptime")
     load = System.get("Load")
 
-    cur.execute("INSERT INTO Systeme(Uptime, Load, Machine) VALUES(?,?,?)", (uptime, load,str(nomMachine),))
+    cur.execute("INSERT INTO Systeme(Uptime, Load, IDMachine) VALUES(?,?,?)", (uptime, load,str(idmachine),))
 
     conn.commit()
 
-    print("[+] Les informations du client " + str(nomMachine) + " ont été reçues et enregistrées.")
+    print("[+] Les informations du client " + str(nom) + " ont été reçues et enregistrées.")
     return
 
 
@@ -240,16 +202,13 @@ class AddClient(Thread):
 
         data["Client"]["IP"] = self.address
 
-        # Enregistrement de la machine dans le Stage #
-        SqlAddToStage(data)
+
         token = SendToken(self.socket, self.password, 1)
         if token == 0:
             SqlAddMachine(data)
             self.res = 0
             self.result()
         elif token == 1:
-            cur.execute("""DELETE FROM Stage WHERE IPMachine = ?""",(self.address,))
-            conn.commit()
             self.res = 1
             self.result()
 
@@ -260,10 +219,6 @@ class AddClient(Thread):
             return 0
         elif self.res == 1:
             return 1
-
-
-
-
 
 
 
@@ -292,7 +247,7 @@ class ReceptionClient(Thread):
             except (socket.error , EOFError):
                 break
             if isinstance(data, dict):
-                data["IP"] = self.address
+                data["Client"]["IP"] = self.address
                 SqlSaveInfos(data)
             elif data == "exit":
                 self.stay = False
@@ -344,7 +299,7 @@ def main():
     token = None
 
     while (1):
-        s.listen(10)
+        s.listen(3)
 
         client,(address, port) = s.accept()
         print("[+] Connexion depuis " + address)
