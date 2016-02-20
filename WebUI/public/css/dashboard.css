@@ -55,6 +55,7 @@ body {
   margin-left: -20px;
 }
 .nav-sidebar > li > a {
+  color: #fff;
   padding-right: 20px;
   padding-left: 20px;
 }
@@ -65,7 +66,9 @@ body {
   background-color: #d98415;
 }
 
-
+a {
+    color: #454545;
+}
 /*
  * Main content
  */
