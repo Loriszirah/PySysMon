@@ -9,6 +9,7 @@
   "dependencies": {
     "ejs": "^1.0.0",
     "express": "^4.6.1",
+    "sqlite3": "*"
    },
   "author": "Alexandre Bouthinon",
   "license": "MIT"

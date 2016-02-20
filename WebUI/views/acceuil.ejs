@@ -5,8 +5,13 @@
     <% include navbar %>
     <div class="container-fluid">
       <div class="row">
-        <% include sidebar %>
-        <% include content %>
+          <div class="col-sm-3 col-md-2 sidebar">
+            <ul class="nav nav-sidebar">
+              <li class="active"><a href="/">Acceuil <span class="sr-only">(current)</span></a></li>
+              <li><a href="/machines">Machines</a></li>
+            </ul>
+          </div>
+        <% include acceuilcontent %>
 
       </div>
     </div>

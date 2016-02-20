@@ -1,0 +1,27 @@
+<div class="col-sm-9 col-sm-offset-3 col-md-10 col-md-offset-2 main">
+  <h1 class="text-center page-header">Informations sur <%= machine[0].NomMachine %></h1>
+  <div class="row">
+    <div class="col-md-12">
+        <div class="text-center">
+          <img src="/images/ordinateur.png" width="200" height="200" class="center-block img-rounded img-responsive">
+          <span class="text-muted">IP : <%= machine[0].IPMachine %></span>
+        </div>
+      <br/>
+    </div>
+  </div>
+    <div class="row">
+        <div class="col-md-6">
+          <h3 class="sub-header">Configuration matérielle</h3>
+          <ul>
+              <li>Modele du processeur : <%= cpu[0].ModelCpu %> </li>
+              <li>Frequence d'horloge : <%= cpu[0].FrequencyCpu %> </li>
+              <li>Nombre de coeurs : <%= cpu[0].NbCore %> ( <%= cpu[0].NbThread %> coeurs logiques ) </li>
+              <li>Mémoire RAM Total : <%= ram[0].TotalRam %> </li>
+          </ul>
+        </div>
+    <div class="col-md-6">
+      <h3 class="sub-header">Utilisation des ressources</h3>
+      <p>Graphes des performances pas encore implémentés</p>
+    </div>
+  </div>
+</div>

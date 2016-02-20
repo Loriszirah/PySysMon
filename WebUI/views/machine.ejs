@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="fr">
+<% include header %>
+<body>
+    <% include navbar %>
+    <div class="container-fluid">
+      <div class="row">
+          <div class="col-sm-3 col-md-2 sidebar">
+            <ul class="nav nav-sidebar">
+              <li><a href="/">Acceuil <span class="sr-only">(current)</span></a></li>
+              <li class="active"><a href="/machines">Machines</a></li>
+            </ul>
+          </div>
+        <% include content %>
+
+      </div>
+    </div>
+
+<!-- Bootstrap core JavaScript
+    ================================================== -->
+    <!-- Placed at the end of the document so the pages load faster -->
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.3/jquery.min.js"></script>
+    <script>window.jQuery || document.write('<script src="/js/jquery.min.js"><\/script>')</script>
+    <script src="/js/bootstrap.min.js"></script>
+</body>
+</html>

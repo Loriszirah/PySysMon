@@ -7,15 +7,25 @@
         <span class="icon-bar"></span>
         <span class="icon-bar"></span>
       </button>
-      <a class="navbar-brand" href="#">Pysysmon WebUI</a>
+      <a class="navbar-brand" href="/">Pysysmon WebUI</a>
     </div>
     <div id="navbar" class="navbar-collapse collapse">
       <ul class="nav navbar-nav navbar-right">
-        <li><a href="#">Dashboard</a></li>
+        <li>
+          <a class=" dropdown-toggle" type="button" id="dropdownMenu1" data-toggle="dropdown" aria-haspopup="true" aria-expanded="true">
+            Menu
+            <span class="caret"></span>
+          </a>
+          <ul class="dropdown-menu" aria-labelledby="dropdownMenu1">
+            <li><a href="/">Acceuil</a></li>
+            <li><a href="/machines">Machines</a></li>
+
+          </ul>
+        </li>
         <li><a href="#">Paramètres</a></li>
       </ul>
       <form class="navbar-form navbar-right">
-        <input type="text" class="form-control" placeholder="Recherche...">
+        <input type="text" class="form-control" placeholder="Rechercher une machine...">
       </form>
     </div>
   </div>
