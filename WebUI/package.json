@@ -9,7 +9,8 @@
   "dependencies": {
     "ejs": "^1.0.0",
     "express": "^4.6.1",
-    "sqlite3": "*"
+    "sqlite3": "*",
+    "socket.io": "*"
    },
   "author": "Alexandre Bouthinon",
   "license": "MIT"

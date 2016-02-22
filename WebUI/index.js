@@ -1,15 +1,22 @@
 
 var express = require('express');
 var sqlite3 = require('sqlite3').verbose();
-var util = require('util');
-
 var db = new sqlite3.Database('server.sqlite3');
 var app = express();
-var machine;
-
+const idmachine;
 app.set('view engine', 'ejs');
 app.use(express.static(__dirname + '/public'));
 
+
+
+
+
+const server = app.listen(8080, () => {
+  console.log('listening on *:8080');
+});
+var io = require('socket.io')(server)
+
+// Page d'acceuil
 
 app.get('/', function(req, res, next) {
 
@@ -18,18 +25,22 @@ app.get('/', function(req, res, next) {
     });
 });
 
-app.get('/machines', function(req, res, next) {
+// Page Liste des Machines
+
+function findAllMachine(req, res, next) {
     db.all("SELECT * FROM Machines ORDER BY IDMachine", function(err, row) {
-        if(err != null) {
-            next(err);
-        }
-        else{
-            res.render('machine', { machines : row }, function(err, html){
-                res.status(200).send(html);
-            });
-        }
+        req.allmachine = row;
+        return next();
     });
-});
+}
+
+function renderAllMachine(req, res) {
+    res.render('listemachine', { machines : req.allmachine });
+}
+
+app.get('/listemachines', findAllMachine, renderAllMachine);
+
+// Page d'information sur une machine
 
 function findMachine(req, res, next) {
     db.all("SELECT * FROM Machines WHERE IDMachine = ?", req.params.idmachine , function(err, row) {
@@ -63,8 +74,33 @@ function renderMachine(req, res) {
     res.render('infomachine', { cpu : req.cpu, ram : req.ram, system : req.sys, machine : req.machine });
 }
 
-app.get('/:idmachine', findMachine, findCpu, findRam, findSystem, renderMachine);
+
+app.get('/machines/:idmachine', findMachine, findCpu, findRam, findSystem, renderMachine);
 
 
-app.listen(8080);
-console.log('Démarrage de Pysysmon WebUI');
+io.sockets.on('connection', (socket) => {
+    console.log('a user connected');
+    function refreshCpu(idmachine) {
+        db.all("SELECT * FROM Cpu WHERE IDMachine = ?", idmachine , function(err, row) {
+            socket.emit('CPU', row[0].PercentCpu);
+            return;
+        });
+    };
+    function refreshRam(idmachine) {
+        db.all("SELECT * FROM Ram WHERE IDMachine = ?", idmachine , function(err, row) {
+            socket.emit('RAM', row[0].PercentRam);
+            return;
+        });
+    };
+
+    socket.on('sendID', function(datamachine) {
+        refreshCpu(datamachine.idmachine);
+        refreshRam(datamachine.idmachine);
+    });
+
+
+    socket.on('disconnect', () => {
+        console.log('user disconnected');
+
+    });
+});

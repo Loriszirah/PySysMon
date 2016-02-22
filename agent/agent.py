@@ -119,10 +119,15 @@ class InfosSystem(Thread):
         System = {}
 
         # Uptime #
-        uptime = os.popen("uptime", "r").read()
-        uptime = uptime.split()
-        uptime = uptime[2].split(",")
-        System["Uptime"] = uptime[0]
+        uptime = os.popen("uptime -p", "r").read()
+        uptime = uptime.split("\n")
+        uptime = uptime[0].split()
+        uptimetmp = uptime[1:]
+        uptime = ""
+        for x in uptimetmp:
+            uptime = uptime + " " + x
+
+        System["Uptime"] = str(uptime)
 
         # Charge systeme #
         loadavg = os.popen("cat /proc/loadavg", "r").read()
@@ -153,6 +158,29 @@ class InfosClient(Thread):
         hostname = hostname.split("\n")
 
         Client["Hostname"] = hostname[0]
+
+        # Nom de la distribution #
+        distribname = os.popen("lsb_release -a |grep Description", "r").read()
+        distribname = distribname.split(":\t")
+        distribname = distribname[1].split("\n")
+
+        distribname = distribname[0]
+        Client["Distribution"] = distribname
+
+        # Version de la distribution #
+        distribversion = os.popen("lsb_release -a |grep Release", "r").read()
+        distribversion = distribversion.split(":\t")
+        distribversion = distribversion[1].split("\n")
+        distribversion = distribversion[0]
+
+        Client["Version"] = distribversion
+
+        # Version du kernel #
+        kernel = os.popen("uname -r", "r").read()
+        kernel = kernel.split("\n")
+        kernel = kernel[0]
+        Client["Kernel"] = kernel
+
 
         # Stockage des infos du client
         Infos["Client"] = Client
@@ -215,9 +243,21 @@ def main():
 
         # Appareillage avec le serveur #
         threadClient = InfosClient()
+        threadCpu = InfosCpu()
+        threadRam = InfosRam()
+        threadSystem = InfosSystem()
+
         threadClient.start()
+        threadCpu.start()
+        threadRam.start()
+        threadSystem.start()
+
         threadClient.join()
-        time.sleep(1)
+        threadCpu.join()
+        threadRam.join()
+        threadSystem.join()
+
+        # time.sleep(1)
         sync = SayHello(sync, s, passwd)
         print("[+] Le serveur a accepté l'appareillage")
 
@@ -229,25 +269,23 @@ def main():
         threadCpu = InfosCpu()
         threadRam = InfosRam()
         threadSystem = InfosSystem()
-        threadClient = InfosClient()
 
         # Démarrage des threads
         threadCpu.start()
         threadRam.start()
         threadSystem.start()
-        threadClient.start()
 
         # Attente de terminaison des threads
         threadCpu.join()
         threadRam.join()
         threadSystem.join()
-        threadClient.join()
 
 
         #print(Infos)
         try:
             # Envoi des informations
             SendInfos(s)
+            # time.sleep(1)
         except BrokenPipeError:
             print("[!] Le serveur est injoignable")
             s.close()
