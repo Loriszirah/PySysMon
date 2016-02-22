@@ -12,13 +12,21 @@ Application Linux client/serveur de monitoring et d'agrégation de logs en Pytho
 
 ## Installation et démarrage :
 Lancez le programme serveur.py:
+
 <code>python3.2 server.py</code>
-Dans un autre terminal ou sur une autre machine lancez le programme agaent.py :
+
+Dans un autre terminal ou sur une autre machine lancez le programme agent.py :
+
 <code>python3.2 agent.py</code>
+
 Ensuite placez-vous dans le répertoire WebUI et lancez :
+
 <code> npm install </code>
+
 Enfin, pour finir,  toujours dans le répertoire WebUI, démarrez le serveur Node.js:
+
 <code>node index.js</code>
+
 
 Ouvrez votre navigateur et rendez-vous sur : http://localhost:8080 ( localhost ou l'IP du serveur )
 
