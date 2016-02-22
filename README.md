@@ -11,6 +11,11 @@ Application Linux client/serveur de monitoring et d'agrégation de logs en Pytho
 - Node.js
 
 ## Installation et démarrage :
+
+Installez les modules python psutil et bitmath:
+
+<code>pip install psutil bitmath</code>
+
 Lancez le programme serveur.py:
 
 <code>python3.2 server.py</code>
