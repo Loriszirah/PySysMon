@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-import socket, pickle, sqlite3, time, hashlib, sys ,os
+import socket, pickle, psycopg2, time, hashlib, sys ,os
 from threading import Thread
 
                                 ###                ###
@@ -12,12 +12,11 @@ from threading import Thread
 s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 s.bind(('', 50000))
 # Chemin vers la base de données #
-db = 'WebUI/server.sqlite3'
+
 
 # Connexion à la base de données #
-conn = sqlite3.connect(db , check_same_thread = False )
-conn.execute('pragma foreign_keys = on')
-conn.commit()
+conn = psycopg2.connect(database='pysysmon' , user='pysysmon' )
+
 cur = conn.cursor()
 
 # Mot de passe de sécurité #
@@ -50,16 +49,16 @@ def SqlTables():
 
     # Table des Machines #
     cur.execute("""CREATE TABLE IF NOT EXISTS Machines(
-                    IDMachine INTEGER PRIMARY KEY AUTOINCREMENT UNIQUE,
+                    IDMachine SERIAL PRIMARY KEY,
                     NomMachine TEXT,
                     DistributionMachine TEXT,
                     DistributionVersion TEXT,
                     KernelVersion TEXT,
-                    IPMachine VARCHAR(15))""", ())
+                    IPMachine TEXT)""", ())
 
     # Table des informations CPU #
     cur.execute("""CREATE TABLE IF NOT EXISTS Cpu(
-                    IDCpuInfo INTEGER PRIMARY KEY AUTOINCREMENT UNIQUE,
+                    IDCpuInfo SERIAL PRIMARY KEY,
                     ModelCpu TEXT,
                     FrequencyCpu TEXT,
                     NbCore TEXT,
@@ -71,7 +70,7 @@ def SqlTables():
 
     # Table des informations RAM #
     cur.execute("""CREATE TABLE IF NOT EXISTS Ram(
-                    IDRam INTEGER PRIMARY KEY AUTOINCREMENT UNIQUE,
+                    IDRam SERIAL PRIMARY KEY,
                     TotalRam TEXT,
                     UseRam TEXT,
                     PercentRam TEXT,
@@ -81,7 +80,7 @@ def SqlTables():
 
     # Table des informations Systeme #
     cur.execute("""CREATE TABLE IF NOT EXISTS Systeme(
-                    IDSysteme INTEGER PRIMARY KEY AUTOINCREMENT UNIQUE,
+                    IDSysteme SERIAL PRIMARY KEY,
                     Uptime TEXT,
                     Load TEXT,
                     HeureSystem TEXT,
@@ -101,10 +100,8 @@ def SqlTables():
 
 def SqlMachineExist(IP):
     """ Test de présence d'une machine dans la table grâce à son IP """
-
-    res = list(cur.execute("SELECT * FROM Machines WHERE IPMachine = ?", (IP,)))
-
-
+    cur.execute("SELECT * FROM Machines WHERE IPMachine=%s", (IP,))
+    res = bool(cur.fetchone())
 
     if bool(res) != False:
         return 0
@@ -125,17 +122,18 @@ def SqlAddMachine(data):
     distribution = client.get("Distribution")
     version = client.get("Version")
     kernel = client.get("Kernel")
+    print(IP + "coucou")
 
-    cur.execute("INSERT INTO  Machines(NomMachine, DistributionMachine, DistributionVersion, KernelVersion, IPMachine) VALUES(?,?,?,?,?)", (nom,distribution,version, kernel,IP,))
+    cur.execute("INSERT INTO  Machines(NomMachine, DistributionMachine, DistributionVersion, KernelVersion, IPMachine) VALUES(%s,%s,%s,%s,%s)", (nom,distribution,version, kernel,str(IP)))
     conn.commit()
 
     date = os.popen("date |cut -d \" \" -f 4", "r").read()
     date = date.split("\n")
     date = date[0]
 
-    idmachine = cur.execute("""SELECT IDMachine FROM Machines WHERE IPMachine =? AND NomMachine=?""", (IP,nom,))
-    idmachine = list(idmachine)
-    idmachine = idmachine[0][0]
+    cur.execute("""SELECT IDMachine FROM Machines WHERE IPMachine =%s AND NomMachine=%s""", (IP,nom))
+    idmachine = cur.fetchone()
+    idmachine = idmachine[0]
 
     # Ajout des informations Cpu #
     Cpu = data.get("CPU")
@@ -145,7 +143,7 @@ def SqlAddMachine(data):
     thread = Cpu.get("Thread")
     percent = Cpu.get("Percent")
 
-    cur.execute("INSERT INTO Cpu(ModelCpu, FrequencyCpu, NbCore, NbThread, PercentCpu, HeureCpu, IDMachine) VALUES(?,?,?,?,?,?,?)", (model,frequency,core,thread,percent, date,str(idmachine),))
+    cur.execute("INSERT INTO Cpu(ModelCpu, FrequencyCpu, NbCore, NbThread, PercentCpu, HeureCpu, IDMachine) VALUES(%s,%s,%s,%s,%s,%s,%s)", (model,frequency,core,thread,percent, date,str(idmachine)))
     conn.commit()
 
 
@@ -154,14 +152,14 @@ def SqlAddMachine(data):
     use = Ram.get("Use")
     percent = Ram.get("Percent")
 
-    cur.execute("INSERT INTO Ram(TotalRam, UseRam, PercentRam, HeureRam, IDMachine) VALUES(?,?,?,?,?)", (total, use,percent,date,str(idmachine),))
+    cur.execute("INSERT INTO Ram(TotalRam, UseRam, PercentRam, HeureRam, IDMachine) VALUES(%s,%s,%s,%s,%s)", (total, use,percent,date,str(idmachine)))
     conn.commit()
 
     System = data.get("System")
     uptime = System.get("Uptime")
     load = System.get("Load")
 
-    cur.execute("INSERT INTO Systeme(Uptime, Load, HeureSystem, IDMachine) VALUES(?,?,?,?)", (uptime, load,date,str(idmachine),))
+    cur.execute("INSERT INTO Systeme(Uptime, Load, HeureSystem, IDMachine) VALUES(%s,%s,%s,%s)", (uptime, load,date,str(idmachine),))
     conn.commit()
 
 
@@ -182,9 +180,9 @@ def SqlSaveInfos(data):
     date = date.split("\n")
     date = date[0]
 
-    idmachine = cur.execute("""SELECT IDMachine FROM Machines WHERE IPMachine =? AND NomMachine=?""", (IP,nom,))
-    idmachine = list(idmachine)
-    idmachine = idmachine[0][0]
+    cur.execute("""SELECT IDMachine FROM Machines WHERE IPMachine =%s AND NomMachine=%s""", (IP,nom,))
+    idmachine = cur.fetchone()
+    idmachine = str(idmachine[0])
 
     # Ajout des informations Cpu #
     Cpu = data.get("CPU")
@@ -194,7 +192,7 @@ def SqlSaveInfos(data):
     thread = Cpu.get("Thread")
     percent = Cpu.get("Percent")
 
-    cur.execute("UPDATE Cpu SET ModelCpu=? , FrequencyCpu=? , NbCore=? , NbThread=? , PercentCpu=? , HeureCpu=? , IDMachine=? ", (model,frequency,core,thread,percent,date, str(idmachine),))
+    cur.execute("UPDATE Cpu SET ModelCpu=%s , FrequencyCpu=%s , NbCore=%s , NbThread=%s , PercentCpu=%s , HeureCpu=%s , IDMachine=%s WHERE IDMachine='"+idmachine+"'", (model,frequency,core,thread,percent,date, idmachine,))
 
     conn.commit()
 
@@ -205,7 +203,7 @@ def SqlSaveInfos(data):
     use = Ram.get("Use")
     percent = Ram.get("Percent")
 
-    cur.execute("UPDATE Ram SET TotalRam=? , UseRam=? , PercentRam=? , HeureRam=? , IDMachine=? ", (total, use,percent,date,str(idmachine),))
+    cur.execute("UPDATE Ram SET TotalRam=%s , UseRam=%s , PercentRam=%s , HeureRam=%s , IDMachine=%s WHERE IDMachine='"+idmachine+"'", (total, use,percent,date,idmachine,))
 
     conn.commit()
 
@@ -215,7 +213,7 @@ def SqlSaveInfos(data):
     uptime = System.get("Uptime")
     load = System.get("Load")
 
-    cur.execute("UPDATE Systeme SET Uptime=? , Load=? , HeureSystem=? , IDMachine=?", (uptime, load,date,str(idmachine),))
+    cur.execute("UPDATE Systeme SET Uptime=%s , Load=%s , HeureSystem=%s , IDMachine=%s WHERE IDMachine='"+idmachine+"'", (uptime, load,date,idmachine,))
 
     conn.commit()
 

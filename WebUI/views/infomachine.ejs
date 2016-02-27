@@ -20,7 +20,7 @@
               setInterval(UpdateCpu, 1000);
 
               function UpdateCpu(){
-              socket.emit('sendID', {idmachine : <%= machine[0].IDMachine %> });
+              socket.emit('sendID', {idmachine : <%= machine[0].idmachine %> });
               socket.on('CPU', function(data){
                   if(data <= 25){
                       document.getElementById("barcpu-refresh").setAttribute("style","width: " + data + "%")
@@ -58,13 +58,13 @@
 
 
           <div  class="col-sm-9 col-sm-offset-3 col-md-10 col-md-offset-2 main">
-            <h1 class="text-center page-header">Informations sur <b><%= machine[0].NomMachine %> </b></h1>
-            <span class="text-left-align text-muted">UPTIME : <%= system[0].Uptime %></span>
+            <h1 class="text-center page-header">Informations sur <b><%= machine[0].nommachine %> </b></h1>
+            <span class="text-left-align text-muted">UPTIME : <%= system[0].uptime %></span>
             <div class="row">
               <div class="col-md-12">
                   <div class="text-center">
                     <img src="/images/ordinateur.png" width="200" height="200" class="center-block img-rounded img-responsive">
-                    <% if(machine[0].IPMachine == '127.0.0.1'){ %>
+                    <% if(machine[0].ipmachine == '127.0.0.1'){ %>
                         <span class="label label-success">Serveur Pysysmon</span>
                       <% } else{ %>
                           <span class="label label-info">Client Pysysmon</span><br/>
@@ -77,33 +77,33 @@
                   <div class="col-md-6">
                     <h3 class="sub-header">Informations Systeme</h3>
                     <ul>
-                        <li>Distribution : <%= machine[0].DistributionMachine %> </li>
-                        <li>Version de la distribution : <%= machine[0].DistributionVersion %> </li>
-                        <li>Version du kernel : <%= machine[0].KernelVersion %> </li>
-                        <li>Adresse réseau IPV4 : <%= machine[0].IPMachine %> </li>
+                        <li>Distribution : <%= machine[0].distributionmachine %> </li>
+                        <li>Version de la distribution : <%= machine[0].distributionversion %> </li>
+                        <li>Version du kernel : <%= machine[0].kernelversion %> </li>
+                        <li>Adresse réseau IPV4 : <%= machine[0].ipmachine %> </li>
                     </ul>
                   </div>
                   <div class="col-md-6">
                     <h3 class="sub-header">Configuration matérielle</h3>
                     <ul>
-                        <li>Modele du processeur : <%= cpu[0].ModelCpu %> </li>
-                        <li>Frequence d'horloge : <%= cpu[0].FrequencyCpu %> </li>
-                        <li>Nombre de coeurs : <%= cpu[0].NbCore %> ( <%= cpu[0].NbThread %> coeurs logiques ) </li>
-                        <li>Mémoire RAM totale : <%= ram[0].TotalRam %></li>
+                        <li>Modele du processeur : <%= cpu[0].modelcpu %> </li>
+                        <li>Frequence d'horloge : <%= cpu[0].frequencycpu %> </li>
+                        <li>Nombre de coeurs : <%= cpu[0].nbcore %> ( <%= cpu[0].nbthread %> coeurs logiques ) </li>
+                        <li>Mémoire RAM totale : <%= ram[0].totalram %></li>
                     </ul>
                   </div>
               <div class="col-md-12">
                 <h3 class="sub-header">Utilisation des ressources</h3>
                 <h4>CPU</h4>
                     <div  class="progress">
-                    <div id="barcpu-refresh" class="progress-bar progress-bar-info" role="progressbar" aria-valuenow="40" aria-valuemin="0" aria-valuemax="100" style="width: <%= cpu[0].PercentCpu %>%">
-                      <span id="cpu-refresh"><%= cpu[0].PercentCpu %>%</span>
+                    <div id="barcpu-refresh" class="progress-bar progress-bar-info" role="progressbar" aria-valuenow="40" aria-valuemin="0" aria-valuemax="100" style="width: <%= cpu[0].percentcpu %>%">
+                      <span id="cpu-refresh"><%= cpu[0].percentcpu %>%</span>
                     </div>
                   </div>
                 <h4>RAM</h4>
                     <div class="progress">
-                    <div id="barram-refresh" class="progress-bar progress-bar-info" role="progressbar" aria-valuenow="40" aria-valuemin="0" aria-valuemax="100" style="width: <%= ram[0].PercentRam %>%">
-                      <span id="ram-refresh"><%= ram[0].PercentRam %>%</span>
+                    <div id="barram-refresh" class="progress-bar progress-bar-info" role="progressbar" aria-valuenow="40" aria-valuemin="0" aria-valuemax="100" style="width: <%= ram[0].percentram %>%">
+                      <span id="ram-refresh"><%= ram[0].percentram %>%</span>
                     </div>
                   </div>
               </div>

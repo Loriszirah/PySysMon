@@ -16,13 +16,13 @@
 
             <div class="row">
               <% machines.forEach(function(machine , index) { %>
-              <a href="/machines/<%= machine.IDMachine %>">
+              <a href="/machines/<%= machine.idmachine %>">
                   <div class="text-center col-md-3 col-xs-6 col-sm-3">
                     <img src="/images/ordinateur.png" width="200" height="200" class="center-block img-rounded img-responsive">
 
-                    <h4><%= machine.NomMachine %></h4>
+                    <h4><%= machine.nommachine %></h4>
 
-                    <% if(machine.IPMachine == '127.0.0.1'){ %>
+                    <% if(machine.ipmachine == "127.0.0.1"){ %>
                         <span class="label label-success">Serveur Pysysmon</span>
                       <% } else{ %>
                           <span class="label label-info">Client Pysysmon</span>
