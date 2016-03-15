@@ -14,7 +14,6 @@ app.use(express.static(__dirname + '/public'));
 
 
 const server = app.listen(8080, () => {
-  console.log('listening on *:8080');
 });
 
 var io = require('socket.io')(server)
@@ -73,8 +72,10 @@ app.get('/machines/:idmachine', function(req, res, next) {
     });
 });
 
+
+// Temps réel pour le rafraichissement des informations sur les machines
 io.sockets.on('connection', (socket) => {
-    console.log('a user connected');
+
 
 
     socket.on('sendID', function(datamachine) {
@@ -90,13 +91,18 @@ io.sockets.on('connection', (socket) => {
                   return console.error('error running query', err);
                 }
                 socket.emit('CPU', result.rows[0].percentcpu);
+                client.query("SELECT Uptime FROM Systeme WHERE IDMachine=$1",[datamachine.idmachine], function(err, result) {
+                    if(err) {
+                      return console.error('error running query', err);
+                    }
+                    socket.emit('Uptime', result.rows[0].uptime);
+                });
             });
         });
     });
 
 
     socket.on('disconnect', () => {
-        console.log('user disconnected');
 
     });
 });

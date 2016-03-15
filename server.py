@@ -90,9 +90,31 @@ def SqlTables():
 
     conn.commit()
 
+    # Table des incidents #
+    cur.execute("""CREATE TABLE IF NOT EXISTS Incidents(
+                    IDIncident SERIAL PRIMARY KEY,
+                    IDMachine INTEGER,
+                    DateIncident DATE,
+                    TypeIncident TEXT,
+                    InfoIncident TEXT,
+                    FOREIGN KEY(IDMachine) REFERENCES Machines(IDMachine))""", ())
+
+
+    conn.commit()
+
     return
 
 
+###
+# Définition des Triggers de la BD
+###
+
+def SqlTrigger():
+    """ Création des triggers sur la base de données """
+
+    # Création d'un incident lorsque la charge du client dépasse un certain niveau #
+
+    return
 
 ###
 # Test l'existance d'une machine dans la table Machines
