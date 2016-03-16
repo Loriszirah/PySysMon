@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="fr">
+<% include header %>
+<body>
+    <% include navbar %>
+    <div class="container-fluid">
+      <div class="row">
+        <% include sidebar %>
+
+          <div class="col-sm-9 col-sm-offset-3 col-md-10 col-md-offset-2 main">
+            <h1 class="page-header">Incidents</h1>
+
+            <div class="row">
+              <% incidents.forEach(function(incident , index) { %>
+              <div class="panel panel-danger">
+                <div class="panel-heading"><%= incident.dateincident %> : Incident sur l'hôte</h4>
+                <div class="panel-body">
+                Un probléme est survenu sur
+              </div>
+
+              </div>
+            </div>
+              <% }); %>
+            </div>
+          </div>
+
+      </div>
+    </div>
+
+<!-- Bootstrap core JavaScript
+    ================================================== -->
+    <!-- Placed at the end of the document so the pages load faster -->
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.3/jquery.min.js"></script>
+    <script>window.jQuery || document.write('<script src="/js/jquery.min.js"><\/script>')</script>
+    <script src="/js/bootstrap.min.js"></script>
+</body>
+</html>

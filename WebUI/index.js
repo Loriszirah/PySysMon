@@ -41,6 +41,20 @@ app.get('/listemachines', function(req, res, next) {
 
 });
 
+// Page Liste des Machines
+app.get('/incidents', function(req, res, next) {
+    var incidents;
+    client.query("SELECT * FROM Incidents ORDER BY IDIncident", function(err, result) {
+    if(err) {
+      return console.error('error running query', err);
+    }
+    incidents = result.rows;
+    res.render('incidents', { incidents : incidents});
+
+    });
+
+});
+
 
 // Page d'information sur une machine
 app.get('/machines/:idmachine', function(req, res, next) {
