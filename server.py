@@ -82,7 +82,7 @@ def SqlTables():
     cur.execute("""CREATE TABLE IF NOT EXISTS Systeme(
                     IDSysteme SERIAL PRIMARY KEY,
                     Uptime TEXT,
-                    Load TEXT,
+                    Load DECIMAL,
                     HeureSystem TEXT,
                     IDMachine INTEGER,
                     FOREIGN KEY(IDMachine) REFERENCES Machines(IDMachine))""", ())
@@ -114,7 +114,31 @@ def SqlTrigger():
 
     # Création d'un incident lorsque la charge du client dépasse un certain niveau #
 
+    # Fonction
+    cur.execute("""CREATE FUNCTION create_incident() RETURNS TRIGGER AS
+'
+  BEGIN
+    IF NEW.Load > 3 THEN
+      INSERT INTO Incidents(IDMachine, DateIncident,InfoIncident) Values(NEW.IDmachine,CURRENT_TIMESTAMP, NEW.Load);
+    END IF;
+    RETURN NEW;
+  END;
+'
+LANGUAGE 'plpgsql';
+""", ())
+    conn.commit()
+
+    # Trigger
+
+    cur.execute("""CREATE TRIGGER IF NOT EXISTS
+trg_create_incident
+  BEFORE UPDATE ON
+Systeme
+FOR EACH ROW EXECUTE PROCEDURE
+create_incident()""")
+    conn.commit()
     return
+
 
 ###
 # Test l'existance d'une machine dans la table Machines
@@ -365,6 +389,7 @@ def main():
 
     password = passwd
     SqlTables()
+    SqlTrigger()
     token = None
 
     while (1):
