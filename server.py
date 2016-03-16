@@ -54,7 +54,8 @@ def SqlTables():
                     DistributionMachine TEXT,
                     DistributionVersion TEXT,
                     KernelVersion TEXT,
-                    IPMachine TEXT)""", ())
+                    IPMachine TEXT,
+                    EtatMachine BOOLEAN)""", ())
 
     # Table des informations CPU #
     cur.execute("""CREATE TABLE IF NOT EXISTS Cpu(
@@ -95,7 +96,7 @@ def SqlTables():
                     IDIncident SERIAL PRIMARY KEY,
                     IDMachine INTEGER,
                     Hote TEXT,
-                    DateIncident DATE,
+                    DateIncident TIMESTAMP,
                     TypeIncident TEXT,
                     InfoIncident TEXT,
                     FOREIGN KEY(IDMachine) REFERENCES Machines(IDMachine))""", ())
@@ -122,7 +123,7 @@ def SqlTrigger():
   BEGIN
   select into hote nommachine from machines where idmachine = NEW.IDmachine;
     IF NEW.Load > 0.8 THEN
-      INSERT INTO Incidents(IDMachine, Hote,DateIncident,InfoIncident) Values(NEW.IDmachine,hote,now(), NEW.Load);
+      INSERT INTO Incidents(IDMachine, Hote,DateIncident,InfoIncident) Values(NEW.IDmachine,hote,localtimestamp, NEW.Load);
     END IF;
     RETURN NEW;
   END;
@@ -159,6 +160,14 @@ def SqlMachineExist(IP):
     else:
         return 1
 
+def MachineUp(IP):
+    cur.execute("UPDATE Machines SET EtatMachine=True WHERE IPMachine=%s", (IP,))
+    conn.commit()
+    return
+def MachineDown(IP):
+    cur.execute("UPDATE Machines SET EtatMachine=False WHERE IPMachine=%s", (IP,))
+    conn.commit()
+    return
 
 ###
 # Ecriture dans la base de données
@@ -351,6 +360,7 @@ class ReceptionClient(Thread):
                 self.stay = False
                 break
         print("[!] Déconnexion du client: " + self.address)
+        MachineDown(self.address)
         self.socket.close()
 
 
@@ -410,6 +420,7 @@ def main():
 
             if threadAddClient.result() == 0:
                 print("[?] Succes de l'authentification de " + address)
+                MachineUp(address)
                 threadRecepClient = ReceptionClient(client, address)
                 threadRecepClient.start()
 
@@ -430,6 +441,7 @@ def main():
             elif token == 0:
 
                 print("[?] Succes de l'authentification de " + address)
+                MachineUp(address)
                 threadRecepClient = ReceptionClient(client, address)
                 threadRecepClient.start()
 

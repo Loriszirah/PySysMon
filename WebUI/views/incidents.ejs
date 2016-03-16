@@ -13,7 +13,7 @@
             <div class="row">
               <% incidents.forEach(function(incident , index) { %>
               <div class="panel panel-danger">
-                <div class="panel-heading"><%= incident.dateincident %> : Incident sur l'hôte <b><%= incident.hote %></b></h4>
+                <div class="panel-heading"><i><%= incident.dateincident %></i> : Incident sur l'hôte <b><%= incident.hote %></b></h4>
                 <div class="panel-body">
                 Un probléme est survenu sur <%= incident.hote %>, le systeme a subi une charge de : <%= incident.infoincident %>
               </div>

@@ -19,9 +19,14 @@
                     <h4><%= machine.nommachine %></h4>
 
                     <% if(machine.ipmachine == "127.0.0.1"){ %>
-                        <span class="label label-success">Serveur Pysysmon</span>
+                        <span class="label label-primary">Serveur Pysysmon</span>
                       <% } else{ %>
                           <span class="label label-info">Client Pysysmon</span>
+                    <% } %>
+                    <% if(machine.etatmachine == true){ %>
+                        <span class="label label-success">En Ligne</span>
+                      <% } else{ %>
+                          <span class="label label-danger">Hors ligne</span><br/>
                     <% } %>
 
                   </div>
