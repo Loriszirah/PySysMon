@@ -17,30 +17,30 @@
               function UpdateCpu(){
               socket.emit('sendID', {idmachine : <%= machine[0].idmachine %> });
               socket.on('CPU', function(data){
-                  if(data <= 25){
+                  if(data <= 66){
                       document.getElementById("barcpu-refresh").setAttribute("style","width: " + data + "%")
                       document.getElementById("barcpu-refresh").setAttribute("class","progress-bar progress-bar-info")
                       document.getElementById('cpu-refresh').innerHTML= "<span>"+ data +"%</span>";
-                  }else if(data > 25 && data <= 66){
+                  }else if(data > 66 && data <= 85){
                       document.getElementById("barcpu-refresh").setAttribute("style","width: " + data + "%")
                       document.getElementById("barcpu-refresh").setAttribute("class","progress-bar progress-bar-warning")
                       document.getElementById('cpu-refresh').innerHTML= "<span>"+ data +"%</span>";
-                  }else if(data > 66){
+                  }else if(data > 85){
                       document.getElementById("barcpu-refresh").setAttribute("style","width: " + data + "%")
                       document.getElementById("barcpu-refresh").setAttribute("class","progress-bar progress-bar-danger")
                       document.getElementById('cpu-refresh').innerHTML= "<span>"+ data +"%</span>";
                   }
                    });
               socket.on('RAM', function(data){
-                  if(data <= 25){
+                  if(data <= 66){
                       document.getElementById("barram-refresh").setAttribute("style","width: " + data + "%")
                       document.getElementById("barram-refresh").setAttribute("class","progress-bar progress-bar-info")
                       document.getElementById('ram-refresh').innerHTML= "<span>"+ data +"%</span>";
-                  }else if(data > 25 && data <= 66){
+                  }else if(data > 66 && data <= 85){
                       document.getElementById("barram-refresh").setAttribute("style","width: " + data + "%")
                       document.getElementById("barram-refresh").setAttribute("class","progress-bar progress-bar-warning")
                       document.getElementById('ram-refresh').innerHTML= "<span>"+ data +"%</span>";
-                  }else if(data > 66){
+                  }else if(data > 85){
                       document.getElementById("barram-refresh").setAttribute("style","width: " + data + "%")
                       document.getElementById("barram-refresh").setAttribute("class","progress-bar progress-bar-danger")
                       document.getElementById('ram-refresh').innerHTML= "<span>"+ data +"%</span>";
