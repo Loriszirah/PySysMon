@@ -15,7 +15,7 @@ s.bind(('', 50000))
 
 
 # Connexion à la base de données #
-conn = psycopg2.connect(database='pysysmon' , user='pysysmon' )
+conn = psycopg2.connect(database='pysysmon' , user='pysysmon', password='1234' )
 
 cur = conn.cursor()
 
@@ -94,6 +94,7 @@ def SqlTables():
     cur.execute("""CREATE TABLE IF NOT EXISTS Incidents(
                     IDIncident SERIAL PRIMARY KEY,
                     IDMachine INTEGER,
+                    Hote TEXT,
                     DateIncident DATE,
                     TypeIncident TEXT,
                     InfoIncident TEXT,
@@ -115,11 +116,13 @@ def SqlTrigger():
     # Création d'un incident lorsque la charge du client dépasse un certain niveau #
 
     # Fonction
-    cur.execute("""CREATE FUNCTION create_incident() RETURNS TRIGGER AS
-'
+    cur.execute("""CREATE OR REPLACE FUNCTION create_incident() RETURNS TRIGGER AS
+'DECLARE
+    hote text;
   BEGIN
-    IF NEW.Load > 3 THEN
-      INSERT INTO Incidents(IDMachine, DateIncident,InfoIncident) Values(NEW.IDmachine,CURRENT_TIMESTAMP, NEW.Load);
+  select into hote nommachine from machines where idmachine = NEW.IDmachine;
+    IF NEW.Load > 0.8 THEN
+      INSERT INTO Incidents(IDMachine, Hote,DateIncident,InfoIncident) Values(NEW.IDmachine,hote,now(), NEW.Load);
     END IF;
     RETURN NEW;
   END;
@@ -128,15 +131,17 @@ LANGUAGE 'plpgsql';
 """, ())
     conn.commit()
 
-    # Trigger
+# Trigger
+    cur.execute("""DROP TRIGGER  IF EXISTS trg_create_incident ON Systeme""")
+    conn.commit()
 
-    cur.execute("""CREATE TRIGGER IF NOT EXISTS
-trg_create_incident
+    cur.execute("""CREATE TRIGGER trg_create_incident
   BEFORE UPDATE ON
 Systeme
 FOR EACH ROW EXECUTE PROCEDURE
 create_incident()""")
     conn.commit()
+
     return
 
 
