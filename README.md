@@ -104,11 +104,12 @@ Ouvrez votre navigateur et rendez-vous sur : http://localhost:8080 ( localhost o
 - Un programme Agent (Python) à lancer sur chaque client.
 - Un programme Serveur (Python) pour récupérer les données envoyées par les agents.
 - Un script serveur (Node.js) à lancé sur le serveur pour avoir accés à l'interface web (par défaut : http://localhost:8080)
+- Gestion d'incidents permettant d'avoir un historique des pics de charge et des excés de consommation RAM sur les clients.
+
 
 ## Ajouts futurs :  
 
 - Sauvegarde des logs.
-- Gestion d'incidents permettant d'avoir un historique des pics de charge sur les clients.
 - Authentification par compte et mot de passe afin d'accéder à l'interface web.
 
 
