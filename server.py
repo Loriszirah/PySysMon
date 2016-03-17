@@ -74,7 +74,7 @@ def SqlTables():
                     IDRam SERIAL PRIMARY KEY,
                     TotalRam TEXT,
                     UseRam TEXT,
-                    PercentRam TEXT,
+                    PercentRam DECIMAL,
                     HeureRam TEXT,
                     IDMachine INTEGER,
                     FOREIGN KEY(IDMachine) REFERENCES Machines(IDMachine))""", ())
@@ -117,31 +117,60 @@ def SqlTrigger():
     # Création d'un incident lorsque la charge du client dépasse un certain niveau #
 
     # Fonction
-    cur.execute("""CREATE OR REPLACE FUNCTION create_incident() RETURNS TRIGGER AS
-'DECLARE
-    hote text;
-  BEGIN
-  select into hote nommachine from machines where idmachine = NEW.IDmachine;
-    IF NEW.Load > 0.8 THEN
-      INSERT INTO Incidents(IDMachine, Hote,DateIncident,InfoIncident) Values(NEW.IDmachine,hote,localtimestamp, NEW.Load);
-    END IF;
-    RETURN NEW;
-  END;
-'
-LANGUAGE 'plpgsql';
-""", ())
+    cur.execute("""CREATE OR REPLACE FUNCTION create_incident_load() RETURNS TRIGGER AS
+                    'DECLARE
+                        hote text;
+                        BEGIN
+                      select into hote nommachine from machines where idmachine = NEW.IDmachine;
+                        IF NEW.Load > 0.8 THEN
+                          INSERT INTO Incidents(IDMachine, Hote,DateIncident,TypeIncident,InfoIncident) Values(NEW.IDmachine,hote,localtimestamp,''Charge'', NEW.Load);
+                        END IF;
+                        RETURN NEW;
+                      END;
+                    '
+                    LANGUAGE 'plpgsql';
+                    """, ())
     conn.commit()
 
 # Trigger
-    cur.execute("""DROP TRIGGER  IF EXISTS trg_create_incident ON Systeme""")
+    cur.execute("""DROP TRIGGER IF EXISTS trg_create_incident_load ON Systeme""")
+    conn.commit()
+    cur.execute("""CREATE TRIGGER trg_create_incident_load
+                   BEFORE UPDATE ON
+                        Systeme
+                        FOR EACH ROW EXECUTE PROCEDURE
+                        create_incident_load()""")
     conn.commit()
 
-    cur.execute("""CREATE TRIGGER trg_create_incident
-  BEFORE UPDATE ON
-Systeme
-FOR EACH ROW EXECUTE PROCEDURE
-create_incident()""")
+    # Création d'un trigger pour rapporter les incidents sur la consommation de la RAM
+
+    # Fonction
+    cur.execute("""CREATE OR REPLACE FUNCTION create_incident_ram() RETURNS TRIGGER AS
+    'DECLARE
+        hote text;
+    BEGIN
+        select into hote nommachine from machines where idmachine = NEW.IDmachine;
+        IF NEW.PercentRam > 28 THEN
+          INSERT INTO Incidents(IDMachine, Hote,DateIncident,TypeIncident,InfoIncident) Values(NEW.IDmachine,hote,localtimestamp,''RAM'', NEW.PercentRam);
+        END IF;
+        RETURN NEW;
+    END;
+    '
+    LANGUAGE 'plpgsql';
+    """, ())
     conn.commit()
+
+# Trigger
+    cur.execute("""DROP TRIGGER  IF EXISTS trg_create_incident_ram ON Ram""")
+    conn.commit()
+    cur.execute("""CREATE TRIGGER trg_create_incident_ram
+  BEFORE UPDATE ON
+Ram
+FOR EACH ROW EXECUTE PROCEDURE
+create_incident_ram()""")
+    conn.commit()
+
+
 
     return
 
