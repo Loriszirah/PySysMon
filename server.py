@@ -114,7 +114,10 @@ def SqlTables():
 def SqlTrigger():
     """ Création des triggers sur la base de données """
 
+    ###                                                                          ###
     # Création d'un incident lorsque la charge du client dépasse un certain niveau #
+    ###                                                                          ###
+
 
     # Fonction
     cur.execute("""CREATE OR REPLACE FUNCTION create_incident_load() RETURNS TRIGGER AS
@@ -132,7 +135,7 @@ def SqlTrigger():
                     """, ())
     conn.commit()
 
-# Trigger
+    # Trigger
     cur.execute("""DROP TRIGGER IF EXISTS trg_create_incident_load ON Systeme""")
     conn.commit()
     cur.execute("""CREATE TRIGGER trg_create_incident_load
@@ -142,7 +145,12 @@ def SqlTrigger():
                         create_incident_load()""")
     conn.commit()
 
-    # Création d'un trigger pour rapporter les incidents sur la consommation de la RAM
+
+
+    ###                                                                              ###
+    # Création d'un trigger pour rapporter les incidents sur la consommation de la RAM #
+    ###                                                                              ###
+
 
     # Fonction
     cur.execute("""CREATE OR REPLACE FUNCTION create_incident_ram() RETURNS TRIGGER AS
@@ -160,7 +168,7 @@ def SqlTrigger():
     """, ())
     conn.commit()
 
-# Trigger
+    # Trigger
     cur.execute("""DROP TRIGGER  IF EXISTS trg_create_incident_ram ON Ram""")
     conn.commit()
     cur.execute("""CREATE TRIGGER trg_create_incident_ram
@@ -170,6 +178,41 @@ FOR EACH ROW EXECUTE PROCEDURE
 create_incident_ram()""")
     conn.commit()
 
+
+    ###                                                                                                    ###
+    # Création d'un trigger pour si le dernier incident d'un méme client n'a pas eu lieu il y a peu de temps #
+    ###                                                                                                    ###
+
+
+    # Fonction
+    cur.execute("""CREATE OR REPLACE FUNCTION check_time() RETURNS TRIGGER AS
+    'DECLARE
+        timePrev timestamp;
+    BEGIN
+        select into timePrev DateIncident from Incidents where idmachine = NEW.IDmachine;
+        IF timePrev IS NOT NULL THEN
+          IF timePrev BETWEEN localtimestamp - interval ''10 minutes'' AND localtimestamp THEN
+            UPDATE Incidents SET (DateIncident, InfoIncident) = (localtimestamp, NEW.PercentRam) WHERE idmachine = NEW.IDmachine AND TypeIncident = NEW.TypeIncident;
+          END IF;
+        ELSE
+
+        END IF;
+        RETURN NEW;
+    END;
+    '
+    LANGUAGE 'plpgsql';
+    """, ())
+    conn.commit()
+
+    # Trigger
+    cur.execute("""DROP TRIGGER  IF EXISTS trg_check_time ON Incidents""")
+    conn.commit()
+    cur.execute("""CREATE TRIGGER trg_check_time
+    BEFORE UPDATE ON
+    Incidents
+    FOR EACH ROW EXECUTE PROCEDURE
+    check_time()""")
+    conn.commit()
 
 
     return
