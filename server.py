@@ -15,7 +15,7 @@ s.bind(('', 50000))
 
 
 # Connexion à la base de données #
-conn = psycopg2.connect(database='pysysmon' , user='pysysmon', password='1234' )
+conn = psycopg2.connect(database='pysysmon', user='pysysmon' )
 
 cur = conn.cursor()
 
@@ -172,7 +172,7 @@ def SqlTrigger():
     cur.execute("""DROP TRIGGER  IF EXISTS trg_create_incident_ram ON Ram""")
     conn.commit()
     cur.execute("""CREATE TRIGGER trg_create_incident_ram
-  BEFORE UPDATE ON
+  BEFORE INSERT ON
 Ram
 FOR EACH ROW EXECUTE PROCEDURE
 create_incident_ram()""")
@@ -191,7 +191,7 @@ create_incident_ram()""")
     BEGIN
         select into timePrev DateIncident from Incidents where idmachine = NEW.IDmachine;
         IF timePrev IS NOT NULL THEN
-          IF timePrev BETWEEN localtimestamp - interval ''10 minutes'' AND localtimestamp THEN
+          IF timePrev < localtimestamp - interval ''10 minutes'' THEN
             UPDATE Incidents SET (DateIncident, InfoIncident) = (localtimestamp, NEW.PercentRam) WHERE idmachine = NEW.IDmachine AND TypeIncident = NEW.TypeIncident;
           END IF;
         ELSE
