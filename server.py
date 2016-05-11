@@ -46,7 +46,6 @@ def SqlTables():
     """ Création des tables au lancement du programme """
 
 
-
     # Table des Machines #
     cur.execute("""CREATE TABLE IF NOT EXISTS Machines(
                     IDMachine SERIAL PRIMARY KEY,
@@ -67,7 +66,7 @@ def SqlTables():
                     PercentCpu TEXT,
                     HeureCpu TEXT,
                     IDMachine INTEGER,
-                    FOREIGN KEY(IDMachine) REFERENCES Machines(IDMachine))""", ())
+                    FOREIGN KEY(IDMachine) REFERENCES Machines(IDMachine) ON DELETE CASCADE)""", ())
 
     # Table des informations RAM #
     cur.execute("""CREATE TABLE IF NOT EXISTS Ram(
@@ -77,7 +76,7 @@ def SqlTables():
                     PercentRam DECIMAL,
                     HeureRam TEXT,
                     IDMachine INTEGER,
-                    FOREIGN KEY(IDMachine) REFERENCES Machines(IDMachine))""", ())
+                    FOREIGN KEY(IDMachine) REFERENCES Machines(IDMachine) ON DELETE CASCADE)""", ())
 
     # Table des informations Systeme #
     cur.execute("""CREATE TABLE IF NOT EXISTS Systeme(
@@ -86,7 +85,7 @@ def SqlTables():
                     Load DECIMAL,
                     HeureSystem TEXT,
                     IDMachine INTEGER,
-                    FOREIGN KEY(IDMachine) REFERENCES Machines(IDMachine))""", ())
+                    FOREIGN KEY(IDMachine) REFERENCES Machines(IDMachine) ON DELETE CASCADE)""", ())
 
 
     conn.commit()
@@ -96,10 +95,12 @@ def SqlTables():
                     IDIncident SERIAL PRIMARY KEY,
                     IDMachine INTEGER,
                     Hote TEXT,
-                    DateIncident TIMESTAMP,
+                    DateDebIncident TIMESTAMP With time zone,
+                    DateFinIncident TIMESTAMP With time zone,
                     TypeIncident TEXT,
-                    InfoIncident TEXT,
-                    FOREIGN KEY(IDMachine) REFERENCES Machines(IDMachine))""", ())
+                    InfoIncident DECIMAL,
+                    Resolu BOOLEAN,
+                    FOREIGN KEY(IDMachine) REFERENCES Machines(IDMachine) ON DELETE CASCADE)""", ())
 
 
     conn.commit()
@@ -123,12 +124,20 @@ def SqlTrigger():
     cur.execute("""CREATE OR REPLACE FUNCTION create_incident_load() RETURNS TRIGGER AS
                     'DECLARE
                         hote text;
+                        old_incidentid integer;
                         BEGIN
                       select into hote nommachine from machines where idmachine = NEW.IDmachine;
-                        IF NEW.Load > 0.8 THEN
-                          INSERT INTO Incidents(IDMachine, Hote,DateIncident,TypeIncident,InfoIncident) Values(NEW.IDmachine,hote,localtimestamp,''Charge'', NEW.Load);
-                        END IF;
-                        RETURN NEW;
+                      select into old_incidentid IDIncident from Incidents where idmachine = NEW.IDmachine AND TypeIncident = ''Charge'' AND Resolu = false;
+                      IF old_incidentid IS NULL AND NEW.Load > 0.8 THEN
+                        INSERT INTO Incidents(IDMachine, Hote,DateDebIncident,TypeIncident,Resolu,InfoIncident) Values(NEW.IDmachine,hote,localtimestamp,''Charge'', false,NEW.Load);
+                      END IF;
+                      IF old_incidentid IS NOT NULL AND NEW.Load > 0.8 THEN
+                        UPDATE Incidents SET (InfoIncident) = (NEW.Load) WHERE idincident = old_incidentid;
+                      ELSE IF old_incidentid IS NOT NULL AND NEW.Load < 0.8 THEN
+                        UPDATE Incidents SET (DateFinIncident, InfoIncident, Resolu) = (localtimestamp, NEW.Load, true) WHERE idincident = old_incidentid;
+                      END IF;
+                      END IF;
+                      RETURN NEW;
                       END;
                     '
                     LANGUAGE 'plpgsql';
@@ -154,68 +163,39 @@ def SqlTrigger():
 
     # Fonction
     cur.execute("""CREATE OR REPLACE FUNCTION create_incident_ram() RETURNS TRIGGER AS
-    'DECLARE
-        hote text;
-    BEGIN
-        select into hote nommachine from machines where idmachine = NEW.IDmachine;
-        IF NEW.PercentRam > 28 THEN
-          INSERT INTO Incidents(IDMachine, Hote,DateIncident,TypeIncident,InfoIncident) Values(NEW.IDmachine,hote,localtimestamp,''RAM'', NEW.PercentRam);
-        END IF;
-        RETURN NEW;
-    END;
-    '
-    LANGUAGE 'plpgsql';
-    """, ())
+                    'DECLARE
+                        hote text;
+                        old_incidentid integer;
+                    BEGIN
+                        select into hote nommachine from machines where idmachine = NEW.IDmachine;
+                        select into old_incidentid IDIncident from Incidents where idmachine = NEW.IDmachine AND TypeIncident = ''RAM'' AND Resolu = false;
+                        IF old_incidentid IS NULL AND NEW.PercentRam > 28 THEN
+                            INSERT INTO Incidents(IDMachine, Hote,DateDebIncident,TypeIncident,Resolu,InfoIncident) Values(NEW.IDmachine,hote,localtimestamp,''RAM'', false,NEW.PercentRam);
+                        END IF;
+                        IF old_incidentid IS NOT NULL AND NEW.PercentRam > 28 THEN
+                            UPDATE Incidents SET (InfoIncident) = (NEW.PercentRam) WHERE idincident = old_incidentid;
+                        ELSE IF old_incidentid IS NOT NULL AND NEW.PercentRam < 28 THEN
+                            UPDATE Incidents SET (DateFinIncident, InfoIncident, Resolu) = (localtimestamp, NEW.PercentRam, true) WHERE idincident = old_incidentid;
+                        END IF;
+                        END IF;
+                    RETURN NEW;
+                    END;
+                    '
+                    LANGUAGE 'plpgsql';
+                    """, ())
     conn.commit()
 
     # Trigger
     cur.execute("""DROP TRIGGER  IF EXISTS trg_create_incident_ram ON Ram""")
     conn.commit()
     cur.execute("""CREATE TRIGGER trg_create_incident_ram
-  BEFORE INSERT ON
+  BEFORE UPDATE ON
 Ram
 FOR EACH ROW EXECUTE PROCEDURE
 create_incident_ram()""")
     conn.commit()
 
 
-    ###                                                                                                    ###
-    # Création d'un trigger pour si le dernier incident d'un méme client n'a pas eu lieu il y a peu de temps #
-    ###                                                                                                    ###
-
-
-    # Fonction
-    cur.execute("""CREATE OR REPLACE FUNCTION check_time() RETURNS TRIGGER AS
-    'DECLARE
-        timePrev timestamp;
-    BEGIN
-        select into timePrev DateIncident from Incidents where idmachine = NEW.IDmachine;
-        IF timePrev IS NOT NULL THEN
-          IF timePrev < localtimestamp - interval ''10 minutes'' THEN
-            UPDATE Incidents SET (DateIncident, InfoIncident) = (localtimestamp, NEW.PercentRam) WHERE idmachine = NEW.IDmachine AND TypeIncident = NEW.TypeIncident;
-          END IF;
-        ELSE
-
-        END IF;
-        RETURN NEW;
-    END;
-    '
-    LANGUAGE 'plpgsql';
-    """, ())
-    conn.commit()
-
-    # Trigger
-    cur.execute("""DROP TRIGGER  IF EXISTS trg_check_time ON Incidents""")
-    conn.commit()
-    cur.execute("""CREATE TRIGGER trg_check_time
-    BEFORE UPDATE ON
-    Incidents
-    FOR EACH ROW EXECUTE PROCEDURE
-    check_time()""")
-    conn.commit()
-
-
-    return
 
 
 ###
@@ -254,7 +234,6 @@ def SqlAddMachine(data):
     distribution = client.get("Distribution")
     version = client.get("Version")
     kernel = client.get("Kernel")
-    print(IP + "coucou")
 
     cur.execute("INSERT INTO  Machines(NomMachine, DistributionMachine, DistributionVersion, KernelVersion, IPMachine) VALUES(%s,%s,%s,%s,%s)", (nom,distribution,version, kernel,str(IP)))
     conn.commit()
@@ -427,7 +406,11 @@ class ReceptionClient(Thread):
                 break
             if isinstance(data, dict):
                 data["Client"]["IP"] = self.address
-                SqlSaveInfos(data)
+                try:
+                    SqlSaveInfos(data)
+                except TypeError:
+                    s.close
+                    break
             elif data == "exit":
                 self.stay = False
                 break

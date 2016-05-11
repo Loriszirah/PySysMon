@@ -1,29 +1,33 @@
 
 var express = require('express');
 var pg = require('pg');
-var connectionString = "tcp://pysysmon:1234@localhost/pysysmon"
+var bodyParser = require('body-parser');
+var connectionString = "tcp://pysysmon:1234@localhost/pysysmon";
 var client = new pg.Client(connectionString);
 client.connect();
 var app = express();
-const idmachine;
 app.set('view engine', 'ejs');
 app.use(express.static(__dirname + '/public'));
-
-
+app.use(bodyParser.urlencoded({ extended: false }));
+app.use(bodyParser.json());
 
 
 
 const server = app.listen(8080, () => {
 });
 
-var io = require('socket.io')(server)
+var io = require('socket.io')(server);
+
 
 // Page d'acceuil
 
 app.get('/', function(req, res, next) {
-
-    res.render('acceuil', function(err, html){
-        res.status(200).send(html);
+  client.query("SELECT COUNT (*) AS nb FROM Incidents WHERE Resolu = false",function(err, result) {
+      if(err) {
+        return console.error('error running query', err);
+      }
+      const nbincidents = result.rows[0].nb;
+    res.render('acceuil', {nbincidents : nbincidents});
     });
 });
 
@@ -35,10 +39,15 @@ app.get('/listemachines', function(req, res, next) {
       return console.error('error running query', err);
     }
     machines = result.rows;
-    res.render('listemachine', { machines : machines});
+    client.query("SELECT COUNT (*) AS nb FROM Incidents WHERE Resolu = false",function(err, result) {
+        if(err) {
+          return console.error('error running query', err);
+        }
+        const nbincidents = result.rows[0].nb;
+    res.render('listemachine', { machines : machines, nbincidents : nbincidents});
 
     });
-
+  });
 });
 
 // Page Liste des Machines
@@ -49,14 +58,23 @@ app.get('/incidents', function(req, res, next) {
       return console.error('error running query', err);
     }
     incidents = result.rows;
-    res.render('incidents', { incidents : incidents});
+    client.query("SELECT COUNT (*) AS nb FROM Incidents WHERE Resolu = false",function(err, result) {
+        if(err) {
+          return console.error('error running query', err);
+        }
+        const nbincidents = result.rows[0].nb;
+        res.render('incidents', { incidents : incidents, nbincidents : nbincidents});
 
     });
-
+  });
 });
 
 
 // Page d'information sur une machine
+// app.post('/machines/:idmachine', function(req,res){
+//
+
+// });
 app.get('/machines/:idmachine', function(req, res, next) {
 
     client.query("SELECT * FROM Machines WHERE IDMachine=$1",req.params.idmachine, function(err, result) {
@@ -79,17 +97,35 @@ app.get('/machines/:idmachine', function(req, res, next) {
                       return console.error('error running query', err);
                     }
                     const system = result.rows;
-                    res.render('infomachine', { machine : machine, cpu : cpu, ram : ram, system : system});
+                    client.query("SELECT COUNT (*) AS nb FROM Incidents WHERE Resolu = false",function(err, result) {
+                        if(err) {
+                          return console.error('error running query', err);
+                        }
+                        const nbincidents = result.rows[0].nb;
+                        res.render('infomachine', { machine : machine, cpu : cpu, ram : ram, system : system, nbincidents : nbincidents});
+                  });
                 });
             });
         });
     });
 });
 
+// Suppression Machine
+app.post('/machines/:idmachine',function(req,res){
+  var idmachine=req.body.idmachine;
+  client.query("DELETE FROM Machines WHERE IDMachine=$1",[idmachine], function(err, result) {
+      if(err) {
+        return console.error('error running query', err);
+      }
+    console.log("Machine = "+idmachine+" supprimée");
+    res.end("yes");
+});
+});
+
+
 
 // Temps réel pour le rafraichissement des informations sur les machines
 io.sockets.on('connection', (socket) => {
-
 
 
     socket.on('sendID', function(datamachine) {
@@ -119,4 +155,4 @@ io.sockets.on('connection', (socket) => {
     socket.on('disconnect', () => {
 
     });
-});
+  });

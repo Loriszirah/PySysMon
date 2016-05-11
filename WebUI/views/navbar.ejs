@@ -11,7 +11,7 @@
     </div>
     <div id="navbar" class="navbar-collapse collapse">
       <ul class="nav navbar-nav navbar-right">
-        <li>
+        <li class="">
           <a class="dropdown-toggle" type="button" id="dropdownMenu1" data-toggle="dropdown" aria-haspopup="true" aria-expanded="true">
             Menu
             <span class="caret"></span>
@@ -19,6 +19,8 @@
           <ul class="dropdown-menu" aria-labelledby="dropdownMenu1">
             <li><a href="/">Acceuil</a></li>
             <li><a href="/listemachines">Machines</a></li>
+            <li><a href="/incidents">Incidents <% if(nbincidents != 0){ %><span class="badge"><%= nbincidents %></span><% } %></a></li>
+
 
           </ul>
         </li>

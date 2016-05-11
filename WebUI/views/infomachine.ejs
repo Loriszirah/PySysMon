@@ -4,19 +4,21 @@
 <body>
     <% include navbar %>
     <div class="container-fluid">
-      <div class="row">
+ <div class="row">
           <% include sidebar %>
+
           <!-- Auto reoload Script -->
           <script type="text/javascript">
-              var socket = io();
-              var i = 0;
-              var socket = io.connect();
 
-              setInterval(UpdateCpu, 1000);
+          var socketInfo = io();
+          var socketInfo = io.connect();
+
+              setInterval(UpdateCpu, 5000);
 
               function UpdateCpu(){
-              socket.emit('sendID', {idmachine : <%= machine[0].idmachine %> });
-              socket.on('CPU', function(data){
+
+                socketInfo.emit('sendID', {idmachine : <%= machine[0].idmachine %> });
+                socketInfo.on('CPU', function(data){
                   if(data <= 66){
                       document.getElementById("barcpu-refresh").setAttribute("style","width: " + data + "%")
                       document.getElementById("barcpu-refresh").setAttribute("class","progress-bar progress-bar-info")
@@ -31,7 +33,7 @@
                       document.getElementById('cpu-refresh').innerHTML= "<span>"+ data +"%</span>";
                   }
                    });
-              socket.on('RAM', function(data){
+              socketInfo.on('RAM', function(data){
                   if(data <= 66){
                       document.getElementById("barram-refresh").setAttribute("style","width: " + data + "%")
                       document.getElementById("barram-refresh").setAttribute("class","progress-bar progress-bar-info")
@@ -46,19 +48,46 @@
                       document.getElementById('ram-refresh').innerHTML= "<span>"+ data +"%</span>";
                   }
               });
-              socket.on('Uptime', function(data){
+              socketInfo.on('Uptime', function(data){
                   document.getElementById('uptime-refresh').innerHTML= "<span class=\"text-left-align text-muted\">UPTIME : "+ data +"</span>";
               });
+            };
+            $(function () {
+                $('#machineSupp').modal(options)
+            });
 
-            }
 
           </script>
 
-
           <div  class="col-sm-9 col-sm-offset-3 col-md-10 col-md-offset-2 main">
-            <h1 class="text-center page-header">Informations sur <b><%= machine[0].nommachine %> </b></h1>
+            <div id="message-supp"></div>
+
+            <!-- Générer par le plugin quand la classe alert-dismissable est ajoutée -->
+
+            <div id="machineSupp" class="modal fade" tabindex="-1" role="dialog">
+            <div class="modal-dialog">
+              <div class="modal-content">
+                <div class="modal-header">
+                  <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                  <h4 class="modal-title">ATTENTION</h4>
+                </div>
+                <div class="modal-body">
+                  <p>Voulez-vous réellement supprimer la machine <%= machine[0].nommachine %> ainsi que toutes les données associées ?</p>
+                </div>
+                <div class="modal-footer">
+                  <a type="button" class="btn btn-danger" data-dismiss="modal" id="supp-machine-event-modal">Oui</a>
+                  <a type="button" data-dismiss="modal" aria-label="Close" class="btn btn-success">Non</a>
+                </div>
+              </div><!-- /.modal-content -->
+            </div><!-- /.modal-dialog -->
+          </div><!-- /.modal -->
+          <h1 class="text-center page-header">Informations sur <b><%= machine[0].nommachine %> </b><button type="button" class="btn btn-danger btn-xs" data-toggle="modal" data-target="#machineSupp">
+                &times;
+         </button></h1>
+
             <span class="text-left-align text-muted" id="uptime-refresh">UPTIME : <%= system[0].uptime %></span>
             <div class="row">
+
               <div class="col-md-12">
                   <div class="text-center">
                     <img src="/images/ordinateur.png" width="200" height="200" class="center-block img-rounded img-responsive">
@@ -113,8 +142,20 @@
 <!-- Bootstrap core JavaScript
     ================================================== -->
     <!-- Placed at the end of the document so the pages load faster -->
-    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.3/jquery.min.js"></script>
-    <script>window.jQuery || document.write('<script src="/js/jquery.min.js"><\/script>')</script>
-    <script src="/js/bootstrap.min.js"></script>
+    <script>
+      $(document).on('click', '#supp-machine-event-modal', function(){
+
+        socketInfo.disconnect();
+        var idmachine = <%= machine[0].idmachine %>;
+        $.post("http://localhost:8080/machines/idmachine",{idmachine : idmachine}, function(data){
+              });
+              $('#message-supp').html('<div class="alert alert-success fade in"><button type="button" class="close close-alert" data-dismiss="alert" aria-hidden="true">×</button>This is a success message</div>');
+            setTimeout(function() {
+              location.href = "http://localhost:8080/listemachines";
+              }, 2000); // executera le code après 2000 milliseconde, soit 2 secondes
+        });
+
+    </script>
+
 </body>
 </html>

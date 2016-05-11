@@ -1,7 +1,21 @@
+<script type="text/javascript">
+var socket = io();
+var i = 0;
+var socket = io.connect();
+
+setInterval(UpdateIncident, 1000);
+function UpdateIncident(){
+  socket.emit('sendNbIncidents');
+  socket.on('NbIncidents', function(data){
+    if(data != 0){
+        document.getElementById("nbincidents").innerHTML= "<a href=\"/incidents\">Incidents <span class=\"badge\">" + data + "</span></a>";
+    }
+});
+</script>
 <div class="col-sm-3 col-md-2 sidebar">
   <ul class="nav nav-sidebar">
     <li><a href="/">Acceuil <span class="sr-only">(current)</span></a></li>
     <li><a href="/listemachines">Machines</a></li>
-    <li><a href="/incidents">Incidents</a></li>
+    <li><a href="/incidents" id="nbincidents">Incidents <% if(nbincidents != 0){ %><span class="badge"><%= nbincidents %></span><% } %></a></li>
   </ul>
 </div>
