@@ -1,49 +1,37 @@
 <!DOCTYPE html>
 <html lang="fr">
 <% include header %>
-<body>
+  <body>
     <% include navbar %>
     <div class="container-fluid">
       <div class="row">
         <% include sidebar %>
-
           <div class="col-sm-9 col-sm-offset-3 col-md-10 col-md-offset-2 main">
             <h1 class="page-header">Machines</h1>
-
             <div class="row">
               <% machines.forEach(function(machine , index) { %>
-
-
-                  <div class="text-center col-md-3 col-xs-6 col-sm-3">
-
-                    <a href="/machines/<%= machine.idmachine %>">
-                      <div class="col-md-12">
-                    <img src="/images/ordinateur.png" width="200" height="200" class="center-block img-rounded img-responsive">
-
-                    <h4><%= machine.nommachine %></h4>
-
-                    <% if(machine.ipmachine == "127.0.0.1"){ %>
+                <div class="text-center col-md-3 col-xs-6 col-sm-3">
+                  <a href="/machines/<%= machine.idmachine %>">
+                    <div class="col-md-12">
+                      <img src="/images/ordinateur.png" width="200" height="200" class="center-block img-rounded img-responsive">
+                      <h4><%= machine.nommachine %></h4>
+                      <% if(machine.ipmachine == "127.0.0.1"){ %>
                         <span class="label label-primary">Serveur Pysysmon</span>
                       <% } else{ %>
-                          <span class="label label-info">Client Pysysmon</span>
-                    <% } %>
-                    <% if(machine.etatmachine == true){ %>
+                        <span class="label label-info">Client Pysysmon</span>
+                      <% } %>
+                      <% if(machine.etatmachine == true){ %>
                         <span class="label label-success">En Ligne</span>
                       <% } else{ %>
-                          <span class="label label-danger">Hors ligne</span><br/>
-                    <% } %>
-                    </a>
-                    
-                  </div>
-
-
+                        <span class="label label-danger">Hors ligne</span><br/>
+                      <% } %>
+                    </div>
+                  </a>
+                </div>
               <% }); %>
-            </div>
           </div>
         </div>
       </div>
     </div>
-
-
-</body>
+  </body>
 </html>

@@ -1,161 +1,182 @@
 <!DOCTYPE html>
 <html lang="fr">
 <% include header %>
-<body>
+  <body>
     <% include navbar %>
     <div class="container-fluid">
- <div class="row">
-          <% include sidebar %>
-
-          <!-- Auto reoload Script -->
-          <script type="text/javascript">
-
-          var socketInfo = io();
-          var socketInfo = io.connect();
-
-              setInterval(UpdateCpu, 5000);
-
-              function UpdateCpu(){
-
-                socketInfo.emit('sendID', {idmachine : <%= machine[0].idmachine %> });
-                socketInfo.on('CPU', function(data){
-                  if(data <= 66){
-                      document.getElementById("barcpu-refresh").setAttribute("style","width: " + data + "%")
-                      document.getElementById("barcpu-refresh").setAttribute("class","progress-bar progress-bar-info")
-                      document.getElementById('cpu-refresh').innerHTML= "<span>"+ data +"%</span>";
-                  }else if(data > 66 && data <= 85){
-                      document.getElementById("barcpu-refresh").setAttribute("style","width: " + data + "%")
-                      document.getElementById("barcpu-refresh").setAttribute("class","progress-bar progress-bar-warning")
-                      document.getElementById('cpu-refresh').innerHTML= "<span>"+ data +"%</span>";
-                  }else if(data > 85){
-                      document.getElementById("barcpu-refresh").setAttribute("style","width: " + data + "%")
-                      document.getElementById("barcpu-refresh").setAttribute("class","progress-bar progress-bar-danger")
-                      document.getElementById('cpu-refresh').innerHTML= "<span>"+ data +"%</span>";
-                  }
-                   });
-              socketInfo.on('RAM', function(data){
-                  if(data <= 66){
-                      document.getElementById("barram-refresh").setAttribute("style","width: " + data + "%")
-                      document.getElementById("barram-refresh").setAttribute("class","progress-bar progress-bar-info")
-                      document.getElementById('ram-refresh').innerHTML= "<span>"+ data +"%</span>";
-                  }else if(data > 66 && data <= 85){
-                      document.getElementById("barram-refresh").setAttribute("style","width: " + data + "%")
-                      document.getElementById("barram-refresh").setAttribute("class","progress-bar progress-bar-warning")
-                      document.getElementById('ram-refresh').innerHTML= "<span>"+ data +"%</span>";
-                  }else if(data > 85){
-                      document.getElementById("barram-refresh").setAttribute("style","width: " + data + "%")
-                      document.getElementById("barram-refresh").setAttribute("class","progress-bar progress-bar-danger")
-                      document.getElementById('ram-refresh').innerHTML= "<span>"+ data +"%</span>";
-                  }
-              });
-              socketInfo.on('Uptime', function(data){
-                  document.getElementById('uptime-refresh').innerHTML= "<span class=\"text-left-align text-muted\">UPTIME : "+ data +"</span>";
-              });
-            };
-            $(function () {
-                $('#machineSupp').modal(options)
+      <div class="row">
+        <% include sidebar %>
+        <!-- ==================================            SCRIPTS           =============================== -->
+        <!-- Script Alert Confirmation Suppression machine -->
+        <script>
+          $(document).on('click', '#supp-machine-event-modal', function(){
+            socketInfo.disconnect();
+            var idmachine = <%= machine[0].idmachine %>;
+            $.post("http://localhost:8080/machines/idmachine",{idmachine : idmachine}, function(data){
             });
+            $('#message-supp').html('<div class="alert alert-success fade in"><button type="button" class="close close-alert" data-dismiss="alert" aria-hidden="true">×</button>[INFO] La machine <%= machine[0].nommachine %> a bien été supprimée.</div>');
+            setTimeout(function() {
+              location.href = "http://localhost:8080/listemachines";
+            }, 3000); // executera le code après 3000 milliseconde, soit 3 secondes
+          });
+
+        </script>
+        <!-- Auto reoload Script -->
+        <script type="text/javascript">
+
+        var socketInfo = io();
+        var socketInfo = io.connect();
+
+        setInterval(UpdateCpu, 5000);
+
+        function UpdateCpu(){
+
+          socketInfo.emit('sendID', {idmachine : <%= machine[0].idmachine %> });
+          socketInfo.on('CPU', function(data){
+            if(data <= 66){
+                document.getElementById("barcpu-refresh").setAttribute("style","width: " + data + "%")
+                document.getElementById("barcpu-refresh").setAttribute("class","progress-bar progress-bar-info")
+                document.getElementById('cpu-refresh').innerHTML= "<span>"+ data +"%</span>";
+            }else if(data > 66 && data <= 85){
+                document.getElementById("barcpu-refresh").setAttribute("style","width: " + data + "%")
+                document.getElementById("barcpu-refresh").setAttribute("class","progress-bar progress-bar-warning")
+                document.getElementById('cpu-refresh').innerHTML= "<span>"+ data +"%</span>";
+            }else if(data > 85){
+                document.getElementById("barcpu-refresh").setAttribute("style","width: " + data + "%")
+                document.getElementById("barcpu-refresh").setAttribute("class","progress-bar progress-bar-danger")
+                document.getElementById('cpu-refresh').innerHTML= "<span>"+ data +"%</span>";
+            }
+          });
+          socketInfo.on('RAM', function(data){
+              if(data <= 66){
+                  document.getElementById("barram-refresh").setAttribute("style","width: " + data + "%")
+                  document.getElementById("barram-refresh").setAttribute("class","progress-bar progress-bar-info")
+                  document.getElementById('ram-refresh').innerHTML= "<span>"+ data +"%</span>";
+              }else if(data > 66 && data <= 85){
+                  document.getElementById("barram-refresh").setAttribute("style","width: " + data + "%")
+                  document.getElementById("barram-refresh").setAttribute("class","progress-bar progress-bar-warning")
+                  document.getElementById('ram-refresh').innerHTML= "<span>"+ data +"%</span>";
+              }else if(data > 85){
+                  document.getElementById("barram-refresh").setAttribute("style","width: " + data + "%")
+                  document.getElementById("barram-refresh").setAttribute("class","progress-bar progress-bar-danger")
+                  document.getElementById('ram-refresh').innerHTML= "<span>"+ data +"%</span>";
+              }
+          });
+          socketInfo.on('Uptime', function(data){
+              document.getElementById('uptime-refresh').innerHTML= "<span class=\"text-left-align\">UPTIME : "+ data +"</span>";
+          });
+        };
+        </script>
+
+        <!-- Script Modal -->
+        <script>
+          $(function () {
+              $('#machineSupp').modal(options)
+          });
+        </script>
+        <!-- ==================================            /           =============================== -->
 
 
-          </script>
+        <div  class="col-sm-9 col-sm-offset-3 col-md-10 col-md-offset-2 main">
+          <div id="message-supp"></div>
 
-          <div  class="col-sm-9 col-sm-offset-3 col-md-10 col-md-offset-2 main">
-            <div id="message-supp"></div>
+              <!-- Générer par le plugin quand la classe alert-dismissable est ajoutée -->
 
-            <!-- Générer par le plugin quand la classe alert-dismissable est ajoutée -->
+              <div id="machineSupp" class="modal fade" tabindex="-1" role="dialog">
+                <div class="modal-dialog">
+                  <div class="modal-content">
+                    <div class="modal-header">
+                      <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                      <h4 class="modal-title">ATTENTION</h4>
+                    </div>
+                    <div class="modal-body">
+                      <p>Voulez-vous réellement supprimer la machine <%= machine[0].nommachine %> ainsi que toutes les données associées ?</p>
+                    </div>
+                    <div class="modal-footer">
+                      <a type="button" class="btn btn-danger" data-dismiss="modal" id="supp-machine-event-modal">Oui</a>
+                      <a type="button" data-dismiss="modal" aria-label="Close" class="btn btn-success">Non</a>
+                    </div>
+                  </div><!-- /.modal-content -->
+                </div><!-- /.modal-dialog -->
+              </div><!-- /.modal -->
 
-            <div id="machineSupp" class="modal fade" tabindex="-1" role="dialog">
-            <div class="modal-dialog">
-              <div class="modal-content">
-                <div class="modal-header">
-                  <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
-                  <h4 class="modal-title">ATTENTION</h4>
+
+            <h1 class="page-header">
+              <div class="row">
+                <div class="text-center">
+                  Informations sur <b><%= machine[0].nommachine %> </b>
                 </div>
-                <div class="modal-body">
-                  <p>Voulez-vous réellement supprimer la machine <%= machine[0].nommachine %> ainsi que toutes les données associées ?</p>
+                <div class="col-md-12">
+                  <div class="text-left col-md-6">
+                    <% if(machine[0].etatmachine == false){ %>
+                      <span class="text-left-align btn btn-danger btn-xs">Non Connectée</span>
+                    <% } else{ %>
+                      <span class="text-left-align btn btn-info btn-xs" id="uptime-refresh">
+                        UPTIME : <%= system[0].uptime %>
+                      </span>
+                    <% } %>
+                  </div>
+                  <div class="text-right col-md-6">
+                    <button type="button" class="text-right btn btn-danger btn-xs" data-toggle="modal" data-target="#machineSupp">
+                      Supprimer <%= machine[0].nommachine %>
+                    </button>
+                  </div>
                 </div>
-                <div class="modal-footer">
-                  <a type="button" class="btn btn-danger" data-dismiss="modal" id="supp-machine-event-modal">Oui</a>
-                  <a type="button" data-dismiss="modal" aria-label="Close" class="btn btn-success">Non</a>
-                </div>
-              </div><!-- /.modal-content -->
-            </div><!-- /.modal-dialog -->
-          </div><!-- /.modal -->
-          <h1 class="text-center page-header">Informations sur <b><%= machine[0].nommachine %> </b><button type="button" class="btn btn-danger btn-xs" data-toggle="modal" data-target="#machineSupp">
-                &times;
-         </button></h1>
-
-            <span class="text-left-align text-muted" id="uptime-refresh">UPTIME : <%= system[0].uptime %></span>
+              </div>
+            </h1>
             <div class="row">
-
               <div class="col-md-12">
+                <p>
                   <div class="text-center">
                     <img src="/images/ordinateur.png" width="200" height="200" class="center-block img-rounded img-responsive">
                     <% if(machine[0].ipmachine == '127.0.0.1'){ %>
-                        <span class="label label-success">Serveur Pysysmon</span>
-                      <% } else{ %>
-                          <span class="label label-info">Client Pysysmon</span><br/>
+                      <span class="label label-success">Serveur Pysysmon</span>
+                    <% } else{ %>
+                      <span class="label label-info">Client Pysysmon</span><br/>
                     <% } %>
                   </div>
-                <br/>
+                </p>
               </div>
             </div>
-              <div class="row">
-                  <div class="col-md-6">
-                    <h3 class="sub-header">Informations Systeme</h3>
-                    <ul>
-                        <li>Distribution : <%= machine[0].distributionmachine %> </li>
-                        <li>Version de la distribution : <%= machine[0].distributionversion %> </li>
-                        <li>Version du kernel : <%= machine[0].kernelversion %> </li>
-                        <li>Adresse réseau IPV4 : <%= machine[0].ipmachine %> </li>
-                    </ul>
-                  </div>
-                  <div class="col-md-6">
-                    <h3 class="sub-header">Configuration matérielle</h3>
-                    <ul>
-                        <li>Modele du processeur : <%= cpu[0].modelcpu %> </li>
-                        <li>Frequence d'horloge : <%= cpu[0].frequencycpu %> </li>
-                        <li>Nombre de coeurs : <%= cpu[0].nbcore %> ( <%= cpu[0].nbthread %> coeurs logiques ) </li>
-                        <li>Mémoire RAM totale : <%= ram[0].totalram %></li>
-                    </ul>
-                  </div>
+            <div class="row">
+              <div class="col-md-6">
+                <h3 class="sub-header">Informations Systeme</h3>
+                <ul>
+                  <li>Distribution : <%= machine[0].distributionmachine %> </li>
+                  <li>Version de la distribution : <%= machine[0].distributionversion %> </li>
+                  <li>Version du kernel : <%= machine[0].kernelversion %> </li>
+                  <li>Adresse réseau IPV4 : <%= machine[0].ipmachine %> </li>
+                </ul>
+              </div>
+              <div class="col-md-6">
+                <h3 class="sub-header">Configuration matérielle</h3>
+                <ul>
+                  <li>Modele du processeur : <%= cpu[0].modelcpu %> </li>
+                  <li>Frequence d'horloge : <%= cpu[0].frequencycpu %> </li>
+                  <li>Nombre de coeurs : <%= cpu[0].nbcore %> ( <%= cpu[0].nbthread %> coeurs logiques ) </li>
+                  <li>Mémoire RAM totale : <%= ram[0].totalram %></li>
+                </ul>
+              </div>
               <div class="col-md-12">
-                <h3 class="sub-header">Utilisation des ressources</h3>
-                <h4>CPU</h4>
+                <% if(machine[0].etatmachine == true){ %>
+                  <h3 class="sub-header">Utilisation des ressources</h3>
+                  <h4>CPU</h4>
                     <div  class="progress">
-                    <div id="barcpu-refresh" class="progress-bar progress-bar-info" role="progressbar" aria-valuenow="40" aria-valuemin="0" aria-valuemax="100" style="width: <%= cpu[0].percentcpu %>%">
-                      <span id="cpu-refresh"><%= cpu[0].percentcpu %>%</span>
+                      <div id="barcpu-refresh" class="progress-bar progress-bar-info" role="progressbar" aria-valuenow="40" aria-valuemin="0" aria-valuemax="100" style="width: <%= cpu[0].percentcpu %>%">
+                        <span id="cpu-refresh"><%= cpu[0].percentcpu %>%</span>
+                      </div>
                     </div>
-                  </div>
-                <h4>RAM</h4>
+                  <h4>RAM</h4>
                     <div class="progress">
-                    <div id="barram-refresh" class="progress-bar progress-bar-info" role="progressbar" aria-valuenow="40" aria-valuemin="0" aria-valuemax="100" style="width: <%= ram[0].percentram %>%">
-                      <span id="ram-refresh"><%= ram[0].percentram %>%</span>
+                      <div id="barram-refresh" class="progress-bar progress-bar-info" role="progressbar" aria-valuenow="40" aria-valuemin="0" aria-valuemax="100" style="width: <%= ram[0].percentram %>%">
+                        <span id="ram-refresh"><%= ram[0].percentram %>%</span>
+                      </div>
                     </div>
-                  </div>
+                <% } %>
               </div>
             </div>
-          </div>
+        </div>
       </div>
     </div>
-
-<!-- Bootstrap core JavaScript
-    ================================================== -->
-    <!-- Placed at the end of the document so the pages load faster -->
-    <script>
-      $(document).on('click', '#supp-machine-event-modal', function(){
-
-        socketInfo.disconnect();
-        var idmachine = <%= machine[0].idmachine %>;
-        $.post("http://localhost:8080/machines/idmachine",{idmachine : idmachine}, function(data){
-              });
-              $('#message-supp').html('<div class="alert alert-success fade in"><button type="button" class="close close-alert" data-dismiss="alert" aria-hidden="true">×</button>This is a success message</div>');
-            setTimeout(function() {
-              location.href = "http://localhost:8080/listemachines";
-              }, 2000); // executera le code après 2000 milliseconde, soit 2 secondes
-        });
-
-    </script>
-
-</body>
+  </body>
 </html>

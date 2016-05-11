@@ -1,91 +1,84 @@
 <!DOCTYPE html>
 <html lang="fr">
 <% include header %>
-<body>
+  <body>
     <% include navbar %>
     <div class="container-fluid">
       <div class="row">
         <% include sidebar %>
 
         <div  class="col-sm-9 col-sm-offset-3 col-md-10 col-md-offset-2 main">
-            <h1 class="page-header">Incidents</h1>
+          <h1 class="page-header">Incidents</h1>
 
-            <div class="center row">
-              <div class="col-md-12">
+          <div class="center row">
+            <div class="col-md-12">
 
               <div class="text-center">
-              <ul class="btn-group nav nav-pills nav-success" id="myTab">
-                  <li class="label-danger active"><a data-toggle="tab" href="#menu1">En Cours</a></li>
-                  <li class="label-success"><a data-toggle="tab" href="#menu2">Résolus</a></li>
+                <ul class="btn-group nav nav-pills nav-success" id="myTab">
+                    <li class="label-danger active"><a data-toggle="tab" href="#menu1">En Cours</a></li>
+                    <li class="label-success"><a data-toggle="tab" href="#menu2">Résolus</a></li>
 
-              </ul>
-              <div class="tab-content" id="myTabContent">
+                </ul>
+                <div class="tab-content" id="myTabContent">
                   <div id="menu1" class="tab-pane fade-danger active in">
                     <p>
+                      <div class="row">
+                        <% incidents.forEach(function(incident , index) { %>
+                          <% if(incident.resolu == false){ %>
 
-                    <div class="row">
-                    <% incidents.forEach(function(incident , index) { %>
-                      <% if(incident.resolu == false){ %>
-
-                      <% if(incident.typeincident == "Charge"){ %>
-                        <div class="panel panel-danger">
-                          <div class="panel-heading"><i><%= incident.datedebincident %></i> : Incident sur l'hôte <b><%= incident.hote %></b></h4></div>
-                          <div class="panel-body">
-                          La machine <%= incident.hote %> subi actuellement une charge de : <%= incident.infoincident %>
-                        </div>
-                        </div>
-                        <% } else if(incident.typeincident == "RAM"){ %>
-                          <div class="panel panel-warning">
-                            <div class="panel-heading"><i><%= incident.datedebincident %></i> : Incident sur l'hôte <b><%= incident.hote %></b></h4></div>
-                            <div class="panel-body">
-                            La machine <%= incident.hote %> consomme actuellement : <%= incident.infoincident %> % de la mémoire RAM disponible
-                          </div>
-                          </div>
-                      <% } %>
-                      <% } %>
-
-                    <% }); %></div></li>
-                  </p>
-
+                            <% if(incident.typeincident == "Charge"){ %>
+                              <div class="panel panel-danger">
+                                <div class="panel-heading"><i><%= incident.datedebincident %></i> : Incident sur l'hôte <b><%= incident.hote %></b></h4></div>
+                                <div class="panel-body">
+                                La machine <%= incident.hote %> subi actuellement une charge de : <%= incident.infoincident %>
+                                </div>
+                              </div>
+                            <% } else if(incident.typeincident == "RAM"){ %>
+                              <div class="panel panel-warning">
+                                <div class="panel-heading"><i><%= incident.datedebincident %></i> : Incident sur l'hôte <b><%= incident.hote %></b></h4></div>
+                                <div class="panel-body">
+                                La machine <%= incident.hote %> consomme actuellement : <%= incident.infoincident %> % de la mémoire RAM disponible
+                                </div>
+                              </div>
+                            <% } %>
+                          <% } %>
+                        <% }); %>
+                      </div>
+                    </p>
                   </div>
                   <div id="menu2" class="tab-pane fade">
                     <p>
-                    <div class="row">
-                    <% incidents.forEach(function(incident , index) { %>
-                      <% if(incident.resolu == true){ %>
-
-                      <% if(incident.typeincident == "Charge"){ %>
-                        <div class="panel panel-success">
-                          <div class="panel-heading"><i>Date de début : <%= incident.datedebincident %></i> : Incident sur l'hôte <b><%= incident.hote %></b></h4></div>
-                          <div class="panel-body">
-                          La machine <%= incident.hote %> subissait une charge trop élevée
-                          Cependant le probléme a été résolu le <%= incident.datefinincident %>.
-                        </div>
-                        </div>
-                        <% } else if(incident.typeincident == "RAM"){ %>
-                          <div class="panel panel-success">
-                            <div class="panel-heading"><i>Date de début : <%= incident.datedebincident %></i> : Incident sur l'hôte <b><%= incident.hote %></b></h4></div>
-                            <div class="panel-body">
-                            La machine <%= incident.hote %> consommait une trop grande quantité de mémoire RAM disponible.
-                            Cependant le probléme a été résolu le <%= incident.datefinincident %>.
-                          </div>
-                          </div>
-                      <% } %>
-                      <% } %>
-                    <% }); %></div></li></p>
+                      <div class="row">
+                        <% incidents.forEach(function(incident , index) { %>
+                          <% if(incident.resolu == true){ %>
+                            <% if(incident.typeincident == "Charge"){ %>
+                              <div class="panel panel-success">
+                                <div class="panel-heading"><i>Date de début : <%= incident.datedebincident %></i> : Incident sur l'hôte <b><%= incident.hote %></b></h4></div>
+                                <div class="panel-body">
+                                La machine <%= incident.hote %> subissait une charge trop élevée
+                                Cependant le probléme a été résolu le <%= incident.datefinincident %>.
+                                </div>
+                              </div>
+                            <% } else if(incident.typeincident == "RAM"){ %>
+                              <div class="panel panel-success">
+                                <div class="panel-heading"><i>Date de début : <%= incident.datedebincident %></i> : Incident sur l'hôte <b><%= incident.hote %></b></h4></div>
+                                <div class="panel-body">
+                                La machine <%= incident.hote %> consommait une trop grande quantité de mémoire RAM disponible.
+                                Cependant le probléme a été résolu le <%= incident.datefinincident %>.
+                                </div>
+                              </div>
+                            <% } %>
+                          <% } %>
+                        <% }); %>
+                      </div>
+                    </p>
                   </div>
+                </div>
               </div>
             </div>
           </div>
+        </div>
       </div>
     </div>
-</div>
-</div>
-<!-- Bootstrap core JavaScript
-    ================================================== -->
-    <!-- Placed at the end of the document so the pages load faster -->
-    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.3/jquery.min.js"></script>
-    <script>window.jQuery || document.write('<script src="/js/jquery.min.js"><\/script>')</script>
-    <script src="/js/bootstrap.min.js"></script>
-</body>
+  </body>
 </html>
