@@ -1,35 +1,76 @@
 <!DOCTYPE html>
 <html lang="fr">
 <% include header %>
+
   <body>
+    <!-- ==================================            SCRIPTS           =============================== -->
+    <script>
+      $(document).on('keypress', '#search-bar', function(e){
+        var socket = io();
+        var socket = io.connect();
+        if(e.keyCode == 13) {
+          e.preventDefault();
+          var data = document.getElementById("search-bar").value;
+          socket.emit('search', { data : data });
+          socket.on('searchRes', function(result){
+            if(result.success == true){
+              $.get( '/searchmachine',{machines:result.machines, nbincidents:result.nbincidents, success:result.success,}, function(data) {
+                document.body.innerHTML = data;
+              });
+            }else if(result.success == false){
+              $.get( '/searchmachine',{machines:result.machines, nbincidents:result.nbincidents, success:result.success,}, function(data) {
+                document.body.innerHTML = data;
+              });
+            }
+          });
+        }
+      });
+
+
+    </script>
+
+    <!-- ==================================            /           =============================== -->
     <% include navbar %>
-    <div class="container-fluid">
+    <div id="searchinfo" class="container-fluid">
       <div class="row">
         <% include sidebar %>
-          <div class="col-sm-9 col-sm-offset-3 col-md-10 col-md-offset-2 main">
-            <h1 class="page-header">Machines</h1>
+          <div  class="col-sm-9 col-sm-offset-3 col-md-10 col-md-offset-2 main">
+            <div class="page-header row">
+              <div class="text-left col-md-3">
+                <h1>Machines</h1>
+              </div>
+            </div>
             <div class="row">
-              <% machines.forEach(function(machine , index) { %>
+              <% if(success == true){%>
+              <p ><% machines.forEach(function(machine) { %>
                 <div class="text-center col-md-3 col-xs-6 col-sm-3">
                   <a href="/machines/<%= machine.idmachine %>">
                     <div class="col-md-12">
                       <img src="/images/ordinateur.png" width="200" height="200" class="center-block img-rounded img-responsive">
-                      <h4><%= machine.nommachine %></h4>
+                      <h4 ><%= machine.nommachine %></h4>
+                      <p>
                       <% if(machine.ipmachine == "127.0.0.1"){ %>
-                        <span class="label label-primary">Serveur Pysysmon</span>
+                        <span class="text-center label label-primary">Serveur Pysysmon</span>
                       <% } else{ %>
-                        <span class="label label-info">Client Pysysmon</span>
+                        <span class="text-center label label-info">Client Pysysmon</span>
                       <% } %>
-                      <% if(machine.etatmachine == true){ %>
-                        <span class="label label-success">En Ligne</span>
+                    </p>
+                    <p>
+                      <% if(machine.etatmachine == true || machine.etatmachine == 'true'){ %>
+                        <span class="text-center label label-success">En Ligne</span>
                       <% } else{ %>
-                        <span class="label label-danger">Hors ligne</span><br/>
+                        <span class="text-center label label-danger">Hors ligne</span><br/>
                       <% } %>
+                    </p>
                     </div>
                   </a>
                 </div>
-              <% }); %>
-          </div>
+              <% });  %>
+              </p>
+              <%} else if(success == false){%>
+              <h3>Aucun résultat à votre recherche</h3>
+              <%}%>
+            </div>
         </div>
       </div>
     </div>

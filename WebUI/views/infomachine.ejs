@@ -10,10 +10,10 @@
         <!-- Script Alert Confirmation Suppression machine -->
         <script>
           $(document).on('click', '#supp-machine-event-modal', function(){
+            var id= <%= machine[0].idmachine %>;
+            socketInfo.emit("suppr", id);
             socketInfo.disconnect();
-            var idmachine = <%= machine[0].idmachine %>;
-            $.post("http://localhost:8080/machines/idmachine",{idmachine : idmachine}, function(data){
-            });
+
             $('#message-supp').html('<div class="alert alert-success fade in"><button type="button" class="close close-alert" data-dismiss="alert" aria-hidden="true">×</button>[INFO] La machine <%= machine[0].nommachine %> a bien été supprimée.</div>');
             setTimeout(function() {
               location.href = "http://localhost:8080/listemachines";
@@ -27,43 +27,43 @@
         var socketInfo = io();
         var socketInfo = io.connect();
 
-        setInterval(UpdateCpu, 5000);
+        setInterval(UpdateCpu, 1000);
 
         function UpdateCpu(){
 
           socketInfo.emit('sendID', {idmachine : <%= machine[0].idmachine %> });
-          socketInfo.on('CPU', function(data){
-            if(data <= 66){
-                document.getElementById("barcpu-refresh").setAttribute("style","width: " + data + "%")
+          socketInfo.on('Infos', function(data){
+            if(data.Cpu <= 66){
+                document.getElementById("barcpu-refresh").setAttribute("style","width: " + data.Cpu + "%")
                 document.getElementById("barcpu-refresh").setAttribute("class","progress-bar progress-bar-info")
-                document.getElementById('cpu-refresh').innerHTML= "<span>"+ data +"%</span>";
-            }else if(data > 66 && data <= 85){
-                document.getElementById("barcpu-refresh").setAttribute("style","width: " + data + "%")
+                document.getElementById('cpu-refresh').innerHTML= "<span>"+ data.Cpu +"%</span>";
+            }else if(data.Cpu > 66 && data.Cpu <= 85){
+                document.getElementById("barcpu-refresh").setAttribute("style","width: " + data.Cpu + "%")
                 document.getElementById("barcpu-refresh").setAttribute("class","progress-bar progress-bar-warning")
-                document.getElementById('cpu-refresh').innerHTML= "<span>"+ data +"%</span>";
-            }else if(data > 85){
-                document.getElementById("barcpu-refresh").setAttribute("style","width: " + data + "%")
+                document.getElementById('cpu-refresh').innerHTML= "<span>"+ data.Cpu +"%</span>";
+            }else if(data.Cpu > 85){
+                document.getElementById("barcpu-refresh").setAttribute("style","width: " + data.Cpu + "%")
                 document.getElementById("barcpu-refresh").setAttribute("class","progress-bar progress-bar-danger")
-                document.getElementById('cpu-refresh').innerHTML= "<span>"+ data +"%</span>";
+                document.getElementById('cpu-refresh').innerHTML= "<span>"+ data.Cpu +"%</span>";
             }
-          });
-          socketInfo.on('RAM', function(data){
-              if(data <= 66){
-                  document.getElementById("barram-refresh").setAttribute("style","width: " + data + "%")
-                  document.getElementById("barram-refresh").setAttribute("class","progress-bar progress-bar-info")
-                  document.getElementById('ram-refresh').innerHTML= "<span>"+ data +"%</span>";
-              }else if(data > 66 && data <= 85){
-                  document.getElementById("barram-refresh").setAttribute("style","width: " + data + "%")
-                  document.getElementById("barram-refresh").setAttribute("class","progress-bar progress-bar-warning")
-                  document.getElementById('ram-refresh').innerHTML= "<span>"+ data +"%</span>";
-              }else if(data > 85){
-                  document.getElementById("barram-refresh").setAttribute("style","width: " + data + "%")
-                  document.getElementById("barram-refresh").setAttribute("class","progress-bar progress-bar-danger")
-                  document.getElementById('ram-refresh').innerHTML= "<span>"+ data +"%</span>";
-              }
-          });
-          socketInfo.on('Uptime', function(data){
-              document.getElementById('uptime-refresh').innerHTML= "<span class=\"text-left-align\">UPTIME : "+ data +"</span>";
+
+
+            if(data.Ram <= 66){
+                document.getElementById("barram-refresh").setAttribute("style","width: " + data.Ram + "%")
+                document.getElementById("barram-refresh").setAttribute("class","progress-bar progress-bar-info")
+                document.getElementById('ram-refresh').innerHTML= "<span>"+ data.Ram +"%</span>";
+            }else if(data.Ram > 66 && data <= 85){
+                document.getElementById("barram-refresh").setAttribute("style","width: " + data.Ram + "%")
+                document.getElementById("barram-refresh").setAttribute("class","progress-bar progress-bar-warning")
+                document.getElementById('ram-refresh').innerHTML= "<span>"+ data.Ram +"%</span>";
+            }else if(data.Ram > 85){
+                document.getElementById("barram-refresh").setAttribute("style","width: " + data.Ram + "%")
+                document.getElementById("barram-refresh").setAttribute("class","progress-bar progress-bar-danger")
+                document.getElementById('ram-refresh').innerHTML= "<span>"+ data.Ram +"%</span>";
+            }
+
+
+            document.getElementById('uptime-refresh').innerHTML= "<span class=\"text-left-align\">UPTIME : "+ data.Uptime +"</span>";
           });
         };
         </script>
@@ -75,7 +75,6 @@
           });
         </script>
         <!-- ==================================            /           =============================== -->
-
 
         <div  class="col-sm-9 col-sm-offset-3 col-md-10 col-md-offset-2 main">
           <div id="message-supp"></div>
