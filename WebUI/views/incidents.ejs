@@ -2,6 +2,33 @@
 <html lang="fr">
 <% include header %>
   <body>
+    <!-- ==================================            SCRIPTS           =============================== -->
+    <script>
+      $(document).on('keypress', '#search-bar', function(e){
+        var socket = io();
+        var socket = io.connect();
+        if(e.keyCode == 13) {
+          e.preventDefault();
+          var data = document.getElementById("search-bar").value;
+          socket.emit('searchincidents', { data : data });
+          socket.on('searchResincidents', function(result){
+            if(result.success == true){
+              $.get( '/searchincidents',{incidents:result.incidents, nbincidents:result.nbincidents, success:result.success,}, function(data) {
+                document.body.innerHTML = data;
+              });
+            }else if(result.success == false){
+              $.get( '/searchincidents',{incidents:result.incidents, nbincidents:result.nbincidents, success:result.success,}, function(data) {
+                document.body.innerHTML = data;
+              });
+            }
+          });
+        }
+      });
+
+
+    </script>
+
+    <!-- ==================================            /           =============================== -->
     <% include navbar %>
     <div class="container-fluid">
       <div class="row">
@@ -22,9 +49,12 @@
                 <div class="tab-content" id="myTabContent">
                   <div id="menu1" class="tab-pane fade-danger active in">
                     <p>
+                      <% if(success == true){%>
+
                       <div class="row">
+
                         <% incidents.forEach(function(incident , index) { %>
-                          <% if(incident.resolu == false){ %>
+                          <% if(incident.resolu == false || incident.resolu == 'false'){ %>
 
                             <% if(incident.typeincident == "Charge"){ %>
                               <div class="panel panel-danger">
@@ -50,7 +80,7 @@
                     <p>
                       <div class="row">
                         <% incidents.forEach(function(incident , index) { %>
-                          <% if(incident.resolu == true){ %>
+                          <% if(incident.resolu == true || incident.resolu == 'true'){ %>
                             <% if(incident.typeincident == "Charge"){ %>
                               <div class="panel panel-success">
                                 <div class="panel-heading"><i>Date de début : <%= incident.datedebincident %></i> : Incident sur l'hôte <b><%= incident.hote %></b></h4></div>
@@ -73,6 +103,9 @@
                       </div>
                     </p>
                   </div>
+                  <%} else if(success == false){%>
+                  <h3>Aucun résultat à votre recherche</h3>
+                  <%}%>
                 </div>
               </div>
             </div>

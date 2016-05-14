@@ -61,6 +61,13 @@ app.get('/searchmachine', function(req,res,next){
   }
 });
 
+app.get('/searchincidents', function(req,res,next){
+  if(req.query.success == 'true'){
+    res.render("incidents",{incidents : req.query.incidents, nbincidents: req.query.nbincidents, success:true});
+  } else if(req.query.success == 'false'){
+    res.render("incidents",{incidents : req.query.incidents, nbincidents: req.query.nbincidents, success:false});
+  }
+});
 
 // Page Liste des Machines
 app.get('/incidents', function(req, res, next) {
@@ -75,7 +82,7 @@ app.get('/incidents', function(req, res, next) {
           return console.error('error running query', err);
         }
         const nbincidents = result.rows[0].nb;
-        res.render('incidents', { incidents : incidents, nbincidents : nbincidents});
+        res.render('incidents', { incidents : incidents, nbincidents : nbincidents, success:true});
 
     });
   });
@@ -167,7 +174,7 @@ io.sockets.on('connection', (socket) => {
         });
 
     });
-    socket.on('search', function(data){
+    socket.on('searchmachine', function(data){
       client.query('SELECT * from Machines where nommachine like $1',['%' + data.data + '%'], function(err , result) {
           if(err) {
             return console.error('error running query', err);
@@ -178,19 +185,39 @@ io.sockets.on('connection', (socket) => {
                 return console.error('error running query', err);
               }
               const nbincidents = result.rows[0].nb;
-              console.log(typeof(machines[0]));
               if(typeof(machines[0]) == 'object'){
                 var newInfos =  { machines : machines, nbincidents : nbincidents, success:true};
               }else if(typeof(machines[0]) == 'undefined'){
                 var newInfos =  { machines : machines, nbincidents : nbincidents, success:false};
               }
-              socket.emit('searchRes', newInfos);
+              socket.emit('searchResmachine', newInfos);
 
 
           });
          });
     })
+    socket.on('searchincidents', function(data){
+      client.query('SELECT * from Incidents where hote like $1',['%' + data.data + '%'], function(err , result) {
+          if(err) {
+            return console.error('error running query', err);
+          }
+          var incidents = result.rows;
+          client.query("SELECT COUNT (*) AS nb FROM Incidents WHERE Resolu = false",function(err, result) {
+              if(err) {
+                return console.error('error running query', err);
+              }
+              const nbincidents = result.rows[0].nb;
+              if(typeof(incidents[0]) == 'object'){
+                var newInfos =  { incidents : incidents, nbincidents : nbincidents, success:true};
+              }else if(typeof(incidents[0]) == 'undefined'){
+                var newInfos =  { incidents : incidents, nbincidents : nbincidents, success:false};
+              }
+              socket.emit('searchResincidents', newInfos);
 
+
+          });
+         });
+    })
     socket.on('disconnect', () => {
 
     });

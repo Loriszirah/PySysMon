@@ -11,8 +11,8 @@
         if(e.keyCode == 13) {
           e.preventDefault();
           var data = document.getElementById("search-bar").value;
-          socket.emit('search', { data : data });
-          socket.on('searchRes', function(result){
+          socket.emit('searchmachine', { data : data });
+          socket.on('searchResmachine', function(result){
             if(result.success == true){
               $.get( '/searchmachine',{machines:result.machines, nbincidents:result.nbincidents, success:result.success,}, function(data) {
                 document.body.innerHTML = data;
