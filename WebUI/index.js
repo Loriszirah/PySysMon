@@ -33,7 +33,9 @@ app.get('/', function(req, res, next) {
     });
 });
 
-
+app.get('/login', function(req,res,next){
+  res.render('login');
+});
 // Page Liste des Machines
 app.get('/listemachines', function(req, res, next) {
     var machines;
