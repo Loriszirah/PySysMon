@@ -4,21 +4,50 @@
 
 
   <body>
+    <!-- ==================================            SCRIPTS           =============================== -->
+    <!-- Script Alert Confirmation Suppression machine -->
+    <script>
+    $(document).on('click', '#submitSignIn', function(){
+      var username = document.getElementById('inputUsername').value;
+      var password = document.getElementById('inputPassword').value;
+      $.post( '/login',{username:username, password:password}, function(data, status,xhr) {
+        if(xhr.status == '201') {
+          window.location = '/'; // optionally put a redirLastPage=somewhere
+        }
+        else{
+          document.body.innerHTML = data;
+        }
+      });
+
+    });
+    </script>
+    <!-- ========================================       /            ==================================-->
+
+
 
     <div class="container">
       <div class="col-md-12">
         <div class="col-md-offset-4 col-md-4">
-          <form class="form-signin">
+
             <h2 class="text-center form-signin-heading">Bienvenue sur Pysysmon WebUI ! </h2>
-            <p>Afin d'accéder aux fonctionnalités d'administration, veuillez-vous connectez : </p>
+            <p class="text-center">Afin d'accéder aux fonctionnalités d'administration, veuillez-vous connectez : </p>
             <p>
               <label for="inputEmail" class="sr-only">Nom de compte</label>
-              <input type="text" id="inputEmail" class="form-control" placeholder="Nom de compte" required autofocus>
+              <input type="text" id="inputUsername" class="form-control" placeholder="Nom de compte" required autofocus>
               <label for="inputPassword" class="sr-only">Mot de passe</label>
               <input type="password" id="inputPassword" class="form-control" placeholder="Mot de passe" required>
             </p>
-            <button class="btn btn-lg btn-primary btn-block" type="submit">Sign in</button>
-          </form>
+            <% if(success == false){ %>
+              <p>
+                <div class="alert alert-warning fade in">Mauvais mot de passe</div>
+              </p>
+            <% } else if (success == 'unknowed'){%>
+              <p>
+                <div class="alert alert-danger fade in">Cet utilisateur n'existe pas</div>
+              </p>
+            <% } %>
+            <button id='submitSignIn' class="btn btn-lg btn-primary btn-block">Se connecter</button>
+
         </div>
       </div>
     </div> <!-- /container -->

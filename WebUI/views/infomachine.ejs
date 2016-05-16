@@ -7,6 +7,8 @@
       <div class="row">
         <% include sidebar %>
         <!-- ==================================            SCRIPTS           =============================== -->
+        <script src="https://cdn.socket.io/socket.io-1.3.5.js"></script>
+
         <!-- Script Alert Confirmation Suppression machine -->
         <script>
           $(document).on('click', '#supp-machine-event-modal', function(){
@@ -16,7 +18,7 @@
 
             $('#message-supp').html('<div class="alert alert-success fade in"><button type="button" class="close close-alert" data-dismiss="alert" aria-hidden="true">×</button>[INFO] La machine <%= machine[0].nommachine %> a bien été supprimée.</div>');
             setTimeout(function() {
-              location.href = "http://localhost:8080/listemachines";
+              location.href = "/listemachines";
             }, 3000); // executera le code après 3000 milliseconde, soit 3 secondes
           });
 
@@ -24,7 +26,6 @@
         <!-- Auto reoload Script -->
         <script type="text/javascript">
 
-        var socketInfo = io();
         var socketInfo = io.connect();
 
         setInterval(UpdateCpu, 1000);

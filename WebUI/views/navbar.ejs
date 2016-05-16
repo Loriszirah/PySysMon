@@ -1,3 +1,4 @@
+
 <nav class="navbar navbar-inverse navbar-fixed-top">
   <div class="container-fluid">
     <div class="navbar-header">
@@ -11,9 +12,6 @@
     </div>
     <div id="navbar" class="navbar-collapse collapse">
       <ul class="nav navbar-nav navbar-right">
-        <form class="navbar-form navbar-left" >
-          <input id="search-bar" type="text" class="form-control" placeholder="Nom de la machine...">
-        </form>
         <li class="">
           <a class="dropdown-toggle" type="button" id="dropdownMenu1" data-toggle="dropdown" aria-haspopup="true" aria-expanded="true">
             Menu
@@ -23,6 +21,7 @@
             <li><a href="/">Acceuil</a></li>
             <li><a href="/listemachines">Machines</a></li>
             <li><a href="/incidents">Incidents <% if(nbincidents != 0){ %><span class="badge"><%= nbincidents %></span><% } %></a></li>
+            <li><a href="/logout">Se déconnecter</a></li>
           </ul>
         </li>
       </ul>

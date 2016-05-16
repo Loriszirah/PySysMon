@@ -11,7 +11,10 @@
     "express": "^4.6.1",
     "pg": "*",
     "body-parser": "^1.8.1",
-    "socket.io": "*"
+    "socket.io": "*",
+    "password-hash": "*",
+    "cookie-parser": "*",
+    "node-uuid": "*"
    },
   "author": "Alexandre Bouthinon",
   "license": "MIT"
